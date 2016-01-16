@@ -127,5 +127,5 @@ set_location_assignment PIN_75 -to sram_oe
 set_location_assignment PIN_74 -to sram_we
 set_global_assignment -name VERILOG_FILE CoolGirl.v
 set_global_assignment -name AUTO_RESTART_CONFIGURATION OFF
-set_global_assignment -name ENABLE_DEVICE_WIDE_RESET OFF
+set_global_assignment -name ENABLE_DEVICE_WIDE_RESET ON
 set_global_assignment -name USE_CONFIGURATION_DEVICE ON
