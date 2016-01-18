@@ -21,7 +21,7 @@ module CoolGirl
 	output reg ppu_ciram_a10,
 	output ppu_ciram_ce,
 		
-	output irq
+	output reg irq
 );
 	reg [26:14] cpu_base;
 	reg [18:14] cpu_mask;
@@ -44,6 +44,24 @@ module CoolGirl
 	reg [7:0] r6;
 	reg [7:0] r7;
 	reg [7:0] r8;
+	reg [7:0] r9;
+	/*
+	reg [7:0] irq_scanline_counter;
+	reg [2:0] a12_low_time;
+	reg irq_scanline_reload;
+	reg irq_scanline_reload_clear;
+	reg irq_scanline_enabled;
+	reg irq_scanline_value;
+	reg irq_scanline_ready;
+	*/
+
+	reg [7:0] irq_scanline_counter;
+	reg [2:0] a12_low_time;
+	reg irq_scanline_reload;
+	reg irq_scanline_reload_clear;
+	reg irq_scanline_enabled;
+	reg irq_scanline_value;
+	reg irq_scanline_ready;	
 	
 	// for MMC1
 	/*
@@ -52,6 +70,15 @@ module CoolGirl
 	r2 - chr0_bank
 	r3 - chr1_bank
 	r4 - prg_bank
+	*/
+	// for MMC3
+	/*
+	r8[2:0] - bank_select
+	r8[3] - PRG mode
+	r8[4] - CHR mode
+	r8[5] - mirroring
+	r8[7:6] - RAM protect
+	r9 - IRQ latch
 	*/
 	
 	assign flash_we = cpu_rw_in | romsel | ~prg_write_enabled;
@@ -64,8 +91,6 @@ module CoolGirl
 	
 	assign ppu_ciram_ce = 1'bZ; // for backward compatibility
 	
-	assign irq = 1'bz;
-
 	always @ (negedge m2)
 	begin
 		if (cpu_rw_in == 0) // write
@@ -130,6 +155,31 @@ module CoolGirl
 				if (mapper == 4'b0011)
 				begin
 					r0 = cpu_data_in;
+				end
+				// Mapper #4 - MMC3/MMC6
+				if (mapper == 4'b0100)
+				begin
+					case ({cpu_addr_in[14:13], cpu_addr_in[0]})
+						3'b000: {r8[4], r8[3], r8[2:0]} = {cpu_data_in[7], cpu_data_in[6], cpu_data_in[2:0]};// $8000-$9FFE, even
+						3'b001: begin // $8001-$9FFF, odd
+							case (r8[2:0])
+								3'b000: r0 = cpu_data_in;
+								3'b001: r1 = cpu_data_in;
+								3'b010: r2 = cpu_data_in;
+								3'b011: r3 = cpu_data_in;
+								3'b100: r4 = cpu_data_in;
+								3'b101: r5 = cpu_data_in;
+								3'b110: r6 = cpu_data_in;
+								3'b111: r7 = cpu_data_in;
+							endcase
+						end
+						3'b010: r8[5] = cpu_data_in[0]; // $A000-$BFFE, even
+						3'b011: r8[7:6] = cpu_data_in[7:6]; // $A001-$BFFF, odd
+						3'b100: r9 = cpu_data_in; // $C000-$DFFE, even (IRQ latch)
+						3'b101: irq_scanline_reload = 1; // $C001-$DFFF, odd
+						3'b110: irq_scanline_enabled = 0; // $E000-$FFFE, even
+						3'b111: irq_scanline_enabled = 1; // $E001-$FFFF, odd
+					endcase					
 				end				
 				// Mapper #7 - AxROM
 				if (mapper == 4'b0111)
@@ -138,6 +188,14 @@ module CoolGirl
 				end				
 			end // romsel
 		end // write
+		
+		// some IRQ stuff
+		/*
+		if (irq_scanline_reload_clear)
+			irq_scanline_reload = 0;
+		*/
+		if (irq_scanline_reload_clear)
+			irq_scanline_reload = 0;
 	end
 
 	always @ (*)
@@ -198,6 +256,37 @@ module CoolGirl
 			ppu_addr_out[17:10] = {r0[4:0] & ~chr_mask[17:13], ppu_addr_in[12:10]};		
 			ppu_ciram_a10 = !mirroring ? ppu_addr_in[10] : ppu_addr_in[11]; // vertical / horizontal			
 		end
+		// Mapper #4 - MMC3/MMC6
+		if (mapper == 4'b0100)
+		begin
+			if (romsel == 0) // accessing $8000-$FFFF
+			begin
+				case ({cpu_addr_in[14:13], r8[3] /*PRG mode*/})
+					3'b000: cpu_addr_out[26:13] = {cpu_base[26:14] | (r6[5:1] & ~cpu_mask[18:14]), r6[0]};
+					3'b001: cpu_addr_out[26:13] = {cpu_base[26:14] | (6'b11111 & ~cpu_mask[18:14]), 1'b0};
+					3'b010,
+					3'b011: cpu_addr_out[26:13] = {cpu_base[26:14] | (r7[5:1] & ~cpu_mask[18:14]), r7[0]};
+					3'b100: cpu_addr_out[26:13] = {cpu_base[26:14] | (6'b11111 & ~cpu_mask[18:14]), 1'b0};
+					3'b101: cpu_addr_out[26:13] = {cpu_base[26:14] | (r6[5:1] & ~cpu_mask[18:14]), r6[0]};
+					default: cpu_addr_out[26:13] = {cpu_base[26:14] | (6'b11111 & ~cpu_mask[18:14]), 1'b1};
+				endcase
+			end
+			if (ppu_addr_in[12] == r8[4] /*CHR mode*/)	
+			begin
+				case (ppu_addr_in[11])
+					1'b0: ppu_addr_out[17:10] = {r0[7:1], ppu_addr_in[10]} & {~chr_mask[17:13], 3'b111};
+					1'b1: ppu_addr_out[17:10] = {r1[7:1], ppu_addr_in[10]} & {~chr_mask[17:13], 3'b111};
+				endcase				
+			end else begin
+				case (ppu_addr_in[11:10])
+					2'b00: ppu_addr_out[17:10] = r2 & {~chr_mask[17:13], 3'b111};
+					2'b01: ppu_addr_out[17:10] = r3 & {~chr_mask[17:13], 3'b111};
+					2'b10: ppu_addr_out[17:10] = r4 & {~chr_mask[17:13], 3'b111};
+					2'b11: ppu_addr_out[17:10] = r5 & {~chr_mask[17:13], 3'b111};
+				endcase
+			end
+			ppu_ciram_a10 = r8[5] /* mirroring */ ? ppu_addr_in[11] : ppu_addr_in[10];
+		end
 		// Mapper #7 - AxROM
 		if (mapper == 4'b0111)
 		begin
@@ -212,4 +301,46 @@ module CoolGirl
 			cpu_addr_out[14:13] = sram_page[1:0]; // accessing $0000-$7FFF, so need to select SRAM page
 	end
 
+	// reenable IRQ only when PPU A12 is low
+	always @ (*)
+	begin
+		if (!irq_scanline_enabled)
+		begin
+			irq_scanline_ready = 0;
+			irq = 1'bZ;
+		end else if (irq_scanline_enabled && !irq_scanline_value)
+			irq_scanline_ready = 1;
+		else if (irq_scanline_ready && irq_scanline_value)
+			irq = 1'b0;
+	end
+	
+	// IRQ counter
+	always @ (posedge ppu_addr_in[12])
+	begin
+		if (a12_low_time == 3)
+		begin
+			//irq_scanline_counter_last = irq_scanline_counter;
+			if ((irq_scanline_reload && !irq_scanline_reload_clear) || (irq_scanline_counter == 0))
+			begin
+				irq_scanline_counter = r9;
+				if (irq_scanline_reload) irq_scanline_reload_clear = 1;
+			end else
+				irq_scanline_counter = irq_scanline_counter-1;
+			if (irq_scanline_counter == 0 && irq_scanline_enabled)
+				irq_scanline_value = 1;
+			else
+				irq_scanline_value = 0;
+		end
+		if (!irq_scanline_reload) irq_scanline_reload_clear = 0;		
+	end
+	
+	// A12 must be low for 3 rises of M2
+	always @ (posedge m2, posedge ppu_addr_in[12])
+	begin
+		if (ppu_addr_in[12])
+			a12_low_time = 0;
+		else if (a12_low_time < 3)
+			a12_low_time = a12_low_time + 1;
+	end
+	
 endmodule
