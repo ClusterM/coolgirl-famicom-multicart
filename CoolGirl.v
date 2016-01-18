@@ -5,7 +5,7 @@ module CoolGirl
 	input cpu_rw_in,
 	input [14:0] cpu_addr_in,
 	input [7:0] cpu_data_in,
-	output reg [26:13] cpu_addr_out,
+	output [26:13] cpu_addr_out,
 	output flash_we,
 	output flash_oe,
 	output sram_ce,
@@ -15,7 +15,7 @@ module CoolGirl
 	input ppu_rd_in,
 	input ppu_wr_in,
 	input [13:0] ppu_addr_in,
-	output reg [17:10] ppu_addr_out,
+	output [17:10] ppu_addr_out,
 	output ppu_rd_out,
 	output ppu_wr_out,
 	output reg ppu_ciram_a10,
@@ -34,6 +34,11 @@ module CoolGirl
 	reg mirroring;
 	reg lockout;
 
+	reg [18:13] cpu_addr_mapped;
+	assign cpu_addr_out[26:13] = romsel == 0 ? {cpu_base[26:14] | (cpu_addr_mapped[18:14] & ~cpu_mask[18:14]), cpu_addr_mapped[13]} : sram_page[1:0];
+	reg [17:10] ppu_addr_mapped;
+	assign ppu_addr_out[17:10] = {ppu_addr_mapped[17:13] & ~chr_mask[17:13], ppu_addr_mapped[12:10]};
+	
 	// some common registers for all mappers
 	reg [7:0] r0;
 	reg [7:0] r1;
@@ -45,15 +50,6 @@ module CoolGirl
 	reg [7:0] r7;
 	reg [7:0] r8;
 	reg [7:0] r9;
-	/*
-	reg [7:0] irq_scanline_counter;
-	reg [2:0] a12_low_time;
-	reg irq_scanline_reload;
-	reg irq_scanline_reload_clear;
-	reg irq_scanline_enabled;
-	reg irq_scanline_value;
-	reg irq_scanline_ready;
-	*/
 
 	reg [7:0] irq_scanline_counter;
 	reg [2:0] a12_low_time;
@@ -190,10 +186,6 @@ module CoolGirl
 		end // write
 		
 		// some IRQ stuff
-		/*
-		if (irq_scanline_reload_clear)
-			irq_scanline_reload = 0;
-		*/
 		if (irq_scanline_reload_clear)
 			irq_scanline_reload = 0;
 	end
@@ -203,9 +195,8 @@ module CoolGirl
 		// Mapper #0 - NROM
 		if (mapper == 4'b0000)
 		begin
-			if (romsel == 0) // accessing $8000-$FFFF
-				cpu_addr_out[26:13] = {cpu_base[26:14] | (cpu_addr_in[14] & ~cpu_mask[14]), cpu_addr_in[13]};		
-			ppu_addr_out[17:10] = {r0[4:0], ppu_addr_in[12:10]};		
+			cpu_addr_mapped = cpu_addr_in[14:13];
+			ppu_addr_mapped = {r0[4:0], ppu_addr_in[12:10]};		
 			ppu_ciram_a10 = !mirroring ? ppu_addr_in[10] : ppu_addr_in[11]; // vertical / horizontal			
 		end
 		// Mapper #1 - MMC1
@@ -214,24 +205,24 @@ module CoolGirl
 			if (romsel == 0) // accessing $8000-$FFFF
 			begin
 				case (r1[3:2])			
-					2'b00: cpu_addr_out[26:13] = {cpu_base[26:15] | (r4[3:1] & ~cpu_mask[17:15]), cpu_addr_in[14:13]}; // 32KB bank mode
-					2'b01: cpu_addr_out[26:13] = {cpu_base[26:15] | (r4[3:1] & ~cpu_mask[17:15]), cpu_addr_in[14:13]}; // 32KB bank mode
+					2'b00,
+					2'b01: cpu_addr_mapped = {r4[3:1], cpu_addr_in[14:13]}; // 32KB bank mode
 					2'b10: if (cpu_addr_in[14] == 0) // $8000-$BFFF
-							cpu_addr_out[26:13] = {cpu_base[26:14], cpu_addr_in[13]}; // fixed to the first bank
+							cpu_addr_mapped = cpu_addr_in[13]; // fixed to the first bank
 						else // $C000-$FFFF
-							cpu_addr_out[26:13] = {cpu_base[26:14] | (r4[3:0] & ~cpu_mask[17:14]), cpu_addr_in[13]};  // 16KB bank selected
+							cpu_addr_mapped = {r4[3:0], cpu_addr_in[13]};  // 16KB bank selected
 					2'b11: if (cpu_addr_in[14] == 0) // $8000-$BFFF
-							cpu_addr_out[26:13] = {cpu_base[26:14] | (r4[3:0] & ~cpu_mask[17:14]), cpu_addr_in[13]};  // 16KB bank selected
+							cpu_addr_mapped = {r4[3:0], cpu_addr_in[13]};  // 16KB bank selected
 						else // $C000-$FFFF
-							cpu_addr_out[26:13] = {cpu_base[26:14] | (4'b1111 & ~cpu_mask[17:14]), cpu_addr_in[13]};	// fixed to the last bank
+							cpu_addr_mapped = {4'b1111, cpu_addr_in[13]};	// fixed to the last bank
 				endcase
 			end
 			case (r1[4])
-				0: ppu_addr_out[17:10] = {1'b0, r2[4:1] & ~chr_mask[16:13], ppu_addr_in[12:10]}; // 8KB bank mode
+				0: ppu_addr_mapped = {r2[4:1], ppu_addr_in[12:10]}; // 8KB bank mode
 				1: if (ppu_addr_in[12] == 0) // 4KB bank mode
-						ppu_addr_out[17:10] = {1'b0, r2[4:1] & ~chr_mask[16:13], r2[0], ppu_addr_in[11:10]}; // first bank
+						ppu_addr_mapped = {r2[4:0], ppu_addr_in[11:10]}; // first bank
 					else
-						ppu_addr_out[17:10] = {1'b0, r3[4:1] & ~chr_mask[16:13], r3[0], ppu_addr_in[11:10]}; // second bank
+						ppu_addr_mapped = {r3[4:0], ppu_addr_in[11:10]}; // second bank
 			endcase
 			case (r1[1:0])
 				2'b00: ppu_ciram_a10 = 0;
@@ -243,17 +234,15 @@ module CoolGirl
 		// Mapper #2 - UxROM
 		if (mapper == 4'b0010)
 		begin
-			if (romsel == 0) // accessing $8000-$FFFF
-				cpu_addr_out[26:13] = {cpu_base[26:14] | ((cpu_addr_in[14] ? 5'b11111 : r0[4:0]) & ~cpu_mask[18:14]), cpu_addr_in[13]};
-			ppu_addr_out[17:10] = {5'b00000, ppu_addr_in[12:10]};		
+			cpu_addr_mapped = {(cpu_addr_in[14] ? 5'b11111 : r0[4:0]), cpu_addr_in[13]};
+			ppu_addr_mapped = ppu_addr_in[12:10];		
 			ppu_ciram_a10 = !mirroring ? ppu_addr_in[10] : ppu_addr_in[11]; // vertical / horizontal			
 		end
 		// Mapper #3 - CNROM
 		if (mapper == 4'b0011)
 		begin
-			if (romsel == 0) // accessing $8000-$FFFF
-				cpu_addr_out[26:13] = {cpu_base[26:14] | (cpu_addr_in[14] & ~cpu_mask[14]), cpu_addr_in[13]};		
-			ppu_addr_out[17:10] = {r0[4:0] & ~chr_mask[17:13], ppu_addr_in[12:10]};		
+			cpu_addr_mapped = {cpu_addr_in[14:13]};
+			ppu_addr_mapped = {r0[4:0], ppu_addr_in[12:10]};		
 			ppu_ciram_a10 = !mirroring ? ppu_addr_in[10] : ppu_addr_in[11]; // vertical / horizontal			
 		end
 		// Mapper #4 - MMC3/MMC6
@@ -262,27 +251,27 @@ module CoolGirl
 			if (romsel == 0) // accessing $8000-$FFFF
 			begin
 				case ({cpu_addr_in[14:13], r8[3] /*PRG mode*/})
-					3'b000: cpu_addr_out[26:13] = {cpu_base[26:14] | (r6[5:1] & ~cpu_mask[18:14]), r6[0]};
-					3'b001: cpu_addr_out[26:13] = {cpu_base[26:14] | (6'b11111 & ~cpu_mask[18:14]), 1'b0};
+					3'b000: cpu_addr_mapped = r6[5:0];
+					3'b001: cpu_addr_mapped = 6'b111110;
 					3'b010,
-					3'b011: cpu_addr_out[26:13] = {cpu_base[26:14] | (r7[5:1] & ~cpu_mask[18:14]), r7[0]};
-					3'b100: cpu_addr_out[26:13] = {cpu_base[26:14] | (6'b11111 & ~cpu_mask[18:14]), 1'b0};
-					3'b101: cpu_addr_out[26:13] = {cpu_base[26:14] | (r6[5:1] & ~cpu_mask[18:14]), r6[0]};
-					default: cpu_addr_out[26:13] = {cpu_base[26:14] | (6'b11111 & ~cpu_mask[18:14]), 1'b1};
+					3'b011: cpu_addr_mapped = r7[5:0];
+					3'b100: cpu_addr_mapped = 6'b111110;
+					3'b101: cpu_addr_mapped = r6[5:0];
+					default: cpu_addr_mapped = 6'b111111;
 				endcase
 			end
 			if (ppu_addr_in[12] == r8[4] /*CHR mode*/)	
 			begin
 				case (ppu_addr_in[11])
-					1'b0: ppu_addr_out[17:10] = {r0[7:1], ppu_addr_in[10]} & {~chr_mask[17:13], 3'b111};
-					1'b1: ppu_addr_out[17:10] = {r1[7:1], ppu_addr_in[10]} & {~chr_mask[17:13], 3'b111};
+					1'b0: ppu_addr_mapped = {r0[7:1], ppu_addr_in[10]};
+					1'b1: ppu_addr_mapped = {r1[7:1], ppu_addr_in[10]};
 				endcase				
 			end else begin
 				case (ppu_addr_in[11:10])
-					2'b00: ppu_addr_out[17:10] = r2 & {~chr_mask[17:13], 3'b111};
-					2'b01: ppu_addr_out[17:10] = r3 & {~chr_mask[17:13], 3'b111};
-					2'b10: ppu_addr_out[17:10] = r4 & {~chr_mask[17:13], 3'b111};
-					2'b11: ppu_addr_out[17:10] = r5 & {~chr_mask[17:13], 3'b111};
+					2'b00: ppu_addr_mapped = r2;
+					2'b01: ppu_addr_mapped = r3;
+					2'b10: ppu_addr_mapped = r4;
+					2'b11: ppu_addr_mapped = r5;
 				endcase
 			end
 			ppu_ciram_a10 = r8[5] /* mirroring */ ? ppu_addr_in[11] : ppu_addr_in[10];
@@ -290,15 +279,14 @@ module CoolGirl
 		// Mapper #7 - AxROM
 		if (mapper == 4'b0111)
 		begin
-			if (romsel == 0) // accessing $8000-$FFFF
-				cpu_addr_out[26:13] = {cpu_base[26:15] | (r0[2:0] & ~cpu_mask[17:15]), cpu_addr_in[14:13]};
-			ppu_addr_out[17:10] = {5'b00000, ppu_addr_in[12:10]};		
+			cpu_addr_mapped = {r0[2:0], cpu_addr_in[14:13]};
+			ppu_addr_mapped = ppu_addr_in[12:10];		
 			ppu_ciram_a10 = r0[4];
 		end
 		
 		// accessing $0000-$7FFF, so need to select SRAM page
-		if (sram_enabled & romsel)
-			cpu_addr_out[14:13] = sram_page[1:0]; // accessing $0000-$7FFF, so need to select SRAM page
+		//if (sram_enabled & romsel)
+//			cpu_addr_out[14:13] = sram_page[1:0]; // accessing $0000-$7FFF, so need to select SRAM page
 	end
 
 	// reenable IRQ only when PPU A12 is low
