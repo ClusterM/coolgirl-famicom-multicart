@@ -1,4 +1,7 @@
-module CoolGirl 
+module CoolGirl #	(
+		parameter USE_VRC2 = 1,
+		parameter USE_CHEETAHMEN2 = 1
+	)
 	(
 	input	m2,
 	input romsel,
@@ -21,13 +24,14 @@ module CoolGirl
 	output reg ppu_ciram_a10,
 	output ppu_ciram_ce,
 		
-	output reg irq
+	output irq
 );
 	reg [26:14] cpu_base;
 	reg [18:14] cpu_mask;
 	reg [17:13] chr_mask;
 	reg [1:0] sram_page;
-	reg [3:0] mapper;
+	reg [4:0] mapper;
+	reg [2:0] flags;
 	reg sram_enabled;
 	reg chr_write_enabled;
 	reg prg_write_enabled;
@@ -58,6 +62,7 @@ module CoolGirl
 	reg irq_scanline_enabled;
 	reg irq_scanline_value;
 	reg irq_scanline_ready;	
+	reg irq_scanline_out;
 	
 	// for MMC1
 	/*
@@ -76,6 +81,30 @@ module CoolGirl
 	r8[7:6] - RAM protect
 	r9 - IRQ latch
 	*/
+	// for VRC
+	assign vrc_2b_hi = cpu_addr_in[1] | cpu_addr_in[3] | cpu_addr_in[5] | cpu_addr_in[7];
+	assign vrc_2b_low = cpu_addr_in[0] | cpu_addr_in[2] | cpu_addr_in[4] | cpu_addr_in[6];
+	/*
+	r0[4:0] - PRG0 bank 
+	r1[4:0] - PRG1 bank 
+	r0[7:6] - mirroring
+	r2 - CHR0
+	r3 - CHR1
+	r4 - CHR2
+	r5 - CHR3
+	r6 - CHR4
+	r7 - CHR5
+	r8 - CHR6
+	r9 - CHR7
+	*/
+	// for mapper #228 - Cheetahmen II :)
+	/*
+	r0[5:0] - CHR bank
+	r1[0] - PRG mode
+	r2[4:0] - PRG bank
+	r3[1:0] - PRG chip... unused by Cheetahmen II
+	r4[0] - mirroring
+	*/	
 	
 	assign flash_we = cpu_rw_in | romsel | ~prg_write_enabled;
 	assign flash_oe = ~cpu_rw_in | romsel;
@@ -84,7 +113,7 @@ module CoolGirl
 	assign sram_oe = ~cpu_rw_in;
 	assign ppu_rd_out = ppu_rd_in | ppu_addr_in[13];
 	assign ppu_wr_out = ppu_wr_in | ppu_addr_in[13] | ~chr_write_enabled;
-	
+	assign irq = !irq_scanline_out ? 1'bZ : 1'b0;
 	assign ppu_ciram_ce = 1'bZ; // for backward compatibility
 	
 	always @ (negedge m2)
@@ -109,8 +138,9 @@ module CoolGirl
 						sram_page = cpu_data_in[1:0];			// current SRAM page 0-3
 					if (cpu_addr_in[2:0] == 3'b110) // $5xx6
 					begin
-						mapper = cpu_data_in[3:0];				// mapper
-						if (mapper == 4'b0001) // MMC1 power-on state
+						mapper = cpu_data_in[4:0];				// mapper
+						flags[2:0] = cpu_data_in[7:5];		// some flags
+						if (mapper == 5'b00001) // MMC1 power-on state
 						begin
 							r0[5:0] = 6'b100000;
 							r1[3:2] = 2'b11;
@@ -122,7 +152,7 @@ module CoolGirl
 				end
 			end else begin // $8000-$FFFF
 				// Mapper #1 - MMC1
-				if (mapper == 4'b0001)
+				if (mapper == 5'b00001)
 				begin
 					if (cpu_data_in[7] == 1) // reset
 					begin
@@ -143,17 +173,17 @@ module CoolGirl
 					end					
 				end				
 				// Mapper #2 - UxROM
-				if (mapper == 4'b0010)
+				if (mapper == 5'b00010)
 				begin
 					r0 = cpu_data_in;
 				end				
 				// Mapper #3 - CNROM
-				if (mapper == 4'b0011)
+				if (mapper == 5'b00011)
 				begin
 					r0 = cpu_data_in;
 				end
 				// Mapper #4 - MMC3/MMC6
-				if (mapper == 4'b0100)
+				if (mapper == 5'b00100)
 				begin
 					case ({cpu_addr_in[14:13], cpu_addr_in[0]})
 						3'b000: {r8[4], r8[3], r8[2:0]} = {cpu_data_in[7], cpu_data_in[6], cpu_data_in[2:0]};// $8000-$9FFE, even
@@ -178,10 +208,54 @@ module CoolGirl
 					endcase					
 				end				
 				// Mapper #7 - AxROM
-				if (mapper == 4'b0111)
+				if (mapper == 5'b00111)
 				begin
 					r0 = cpu_data_in;
-				end				
+				end	
+				// Mapper #23 - VRC2b
+				if (USE_VRC2 == 1 && mapper == 5'b10111)
+				begin
+					// flags[0] to shift lines
+					case ({cpu_addr_in[14:12], flags[0] ? vrc_2b_low : vrc_2b_hi, flags[0] ? vrc_2b_hi : vrc_2b_low}) 
+						5'b00000, // $8000
+						5'b00001, // $8001
+						5'b00010, // $8002
+						5'b00011: r0[4:0] = cpu_data_in[4:0];  // $8003, PRG0
+						5'b00100, // $9000
+						5'b00101, // $9001
+						5'b00110, // $9002
+						5'b00111: r0[7:6] = cpu_data_in[1:0];  // $A003, mirroring
+						5'b01000, // $A000
+						5'b01001, // $A001
+						5'b01010, // $A002
+						5'b01011: r1[4:0] = cpu_data_in[4:0];  // $A003, PRG1
+						5'b01100: r2[3:0] = cpu_data_in[3:0];  // $B000, CHR0 low						
+						5'b01101: r2[7:4] = cpu_data_in[3:0];  // $B001, CHR0 hi
+						5'b01110: r3[3:0] = cpu_data_in[3:0];  // $B002, CHR1 low						
+						5'b01111: r3[7:4] = cpu_data_in[3:0];  // $B003, CHR1 hi
+						5'b10000: r4[3:0] = cpu_data_in[3:0];  // $C000, CHR2 low						
+						5'b10001: r4[7:4] = cpu_data_in[3:0];  // $C001, CHR2 hi
+						5'b10010: r5[3:0] = cpu_data_in[3:0];  // $C002, CHR3 low						
+						5'b10011: r5[7:4] = cpu_data_in[3:0];  // $C003, CHR3 hi
+						5'b10100: r6[3:0] = cpu_data_in[3:0];  // $D000, CHR4 low						
+						5'b10101: r6[7:4] = cpu_data_in[3:0];  // $D001, CHR4 hi
+						5'b10110: r7[3:0] = cpu_data_in[3:0];  // $D002, CHR5 low						
+						5'b10111: r7[7:4] = cpu_data_in[3:0];  // $D003, CHR5 hi
+						5'b11000: r8[3:0] = cpu_data_in[3:0];  // $E000, CHR6 low
+						5'b11001: r8[7:4] = cpu_data_in[3:0];  // $E001, CHR6 hi
+						5'b11010: r9[3:0] = cpu_data_in[3:0];  // $E002, CHR7 low
+						5'b11011: r9[7:4] = cpu_data_in[3:0];  // $E003, CHR7 hi						
+					endcase
+				end
+				// Mapper #228 - Cheetahmen II
+				if (USE_CHEETAHMEN2 == 1 && mapper == 5'b11111)
+				begin
+					r0[5:0] = {cpu_addr_in[3:0], cpu_data_in[1:0]};	// CHR bank
+					r1[0] = cpu_addr_in[5];									// PRG mode
+					r2[4:0] = cpu_addr_in[10:6];							// PRG bank
+					//r3[1:0] = cpu_addr_in[12:11];							// PRG chip
+					r4[0] = cpu_addr_in[13];								// mirroring
+				end
 			end // romsel
 		end // write
 		
@@ -193,14 +267,14 @@ module CoolGirl
 	always @ (*)
 	begin
 		// Mapper #0 - NROM
-		if (mapper == 4'b0000)
+		if (mapper == 5'b00000)
 		begin
 			cpu_addr_mapped = cpu_addr_in[14:13];
 			ppu_addr_mapped = {r0[4:0], ppu_addr_in[12:10]};		
 			ppu_ciram_a10 = !mirroring ? ppu_addr_in[10] : ppu_addr_in[11]; // vertical / horizontal			
 		end
 		// Mapper #1 - MMC1
-		if (mapper == 4'b0001)
+		if (mapper == 5'b00001)
 		begin
 			if (romsel == 0) // accessing $8000-$FFFF
 			begin
@@ -232,21 +306,21 @@ module CoolGirl
 			endcase
 		end
 		// Mapper #2 - UxROM
-		if (mapper == 4'b0010)
+		if (mapper == 5'b00010)
 		begin
 			cpu_addr_mapped = {(cpu_addr_in[14] ? 5'b11111 : r0[4:0]), cpu_addr_in[13]};
 			ppu_addr_mapped = ppu_addr_in[12:10];		
 			ppu_ciram_a10 = !mirroring ? ppu_addr_in[10] : ppu_addr_in[11]; // vertical / horizontal			
 		end
 		// Mapper #3 - CNROM
-		if (mapper == 4'b0011)
+		if (mapper == 5'b00011)
 		begin
 			cpu_addr_mapped = {cpu_addr_in[14:13]};
 			ppu_addr_mapped = {r0[4:0], ppu_addr_in[12:10]};		
 			ppu_ciram_a10 = !mirroring ? ppu_addr_in[10] : ppu_addr_in[11]; // vertical / horizontal			
 		end
 		// Mapper #4 - MMC3/MMC6
-		if (mapper == 4'b0100)
+		if (mapper == 5'b00100)
 		begin
 			if (romsel == 0) // accessing $8000-$FFFF
 			begin
@@ -277,16 +351,52 @@ module CoolGirl
 			ppu_ciram_a10 = r8[5] /* mirroring */ ? ppu_addr_in[11] : ppu_addr_in[10];
 		end
 		// Mapper #7 - AxROM
-		if (mapper == 4'b0111)
+		if (mapper == 5'b00111)
 		begin
 			cpu_addr_mapped = {r0[2:0], cpu_addr_in[14:13]};
 			ppu_addr_mapped = ppu_addr_in[12:10];		
 			ppu_ciram_a10 = r0[4];
 		end
-		
-		// accessing $0000-$7FFF, so need to select SRAM page
-		//if (sram_enabled & romsel)
-//			cpu_addr_out[14:13] = sram_page[1:0]; // accessing $0000-$7FFF, so need to select SRAM page
+		// Mapper #23 - VRC2b
+		if (USE_VRC2 == 1 && mapper == 5'b10111)
+		begin
+			cpu_addr_mapped = cpu_addr_in[14] ? {5'b11111, cpu_addr_in[13]} : {1'b0, !cpu_addr_in[13] ? r0[4:0] : r1[4:0]};
+			if (!flags[1]) // on VRC2a the low bit is ignored
+			begin
+				case (ppu_addr_in[12:10])
+					3'b000: ppu_addr_mapped = r2;
+					3'b001: ppu_addr_mapped = r3;
+					3'b010: ppu_addr_mapped = r4;
+					3'b011: ppu_addr_mapped = r5;
+					3'b100: ppu_addr_mapped = r6;
+					3'b101: ppu_addr_mapped = r7;
+					3'b110: ppu_addr_mapped = r8;
+					3'b111: ppu_addr_mapped = r9;
+				endcase
+			end else begin
+				case (ppu_addr_in[12:10])
+					3'b000: ppu_addr_mapped = {1'b0, r2[7:1]};
+					3'b001: ppu_addr_mapped = {1'b0, r3[7:1]};
+					3'b010: ppu_addr_mapped = {1'b0, r4[7:1]};
+					3'b011: ppu_addr_mapped = {1'b0, r5[7:1]};
+					3'b100: ppu_addr_mapped = {1'b0, r6[7:1]};
+					3'b101: ppu_addr_mapped = {1'b0, r7[7:1]};
+					3'b110: ppu_addr_mapped = {1'b0, r8[7:1]};
+					3'b111: ppu_addr_mapped = {1'b0, r9[7:1]};
+				endcase
+			end
+			ppu_ciram_a10 = r0[7] ? r0[6] : (r0[6] ? ppu_addr_in[11] : ppu_addr_in[10]);
+		end
+		// Mapper #228 - Cheetahmen II
+		if (USE_CHEETAHMEN2 == 1 && mapper == 5'b11111)
+		begin
+			if (cpu_addr_in[14] == 0 || r1[0])
+				cpu_addr_mapped = {r2[4:0], cpu_addr_in[13]};
+			else
+				cpu_addr_mapped = {r2[4:0] | 1, cpu_addr_in[13]};
+			ppu_addr_mapped = {r0[5:0], ppu_addr_in[12:10]};
+			ppu_ciram_a10 = !r4[0] ? ppu_addr_in[10] : ppu_addr_in[11];
+		end
 	end
 
 	// reenable IRQ only when PPU A12 is low
@@ -295,11 +405,11 @@ module CoolGirl
 		if (!irq_scanline_enabled)
 		begin
 			irq_scanline_ready = 0;
-			irq = 1'bZ;
+			irq_scanline_out = 0;
 		end else if (irq_scanline_enabled && !irq_scanline_value)
 			irq_scanline_ready = 1;
 		else if (irq_scanline_ready && irq_scanline_value)
-			irq = 1'b0;
+			irq_scanline_out = 1;
 	end
 	
 	// IRQ counter
