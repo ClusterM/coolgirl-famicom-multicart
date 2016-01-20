@@ -1,6 +1,9 @@
 module CoolGirl #	(
 		parameter USE_VRC2 = 1,
-		parameter USE_CHEETAHMEN2 = 1
+		parameter USE_VRC4_INTERRUPTS = 1,
+		parameter USE_TAITO = 1,			// mappers #33 & #48
+		parameter USE_SUNSOFT = 0, 		// mapper #69
+		parameter USE_CHEETAHMEN2 = 0 	// mapper #228
 	)
 	(
 	input	m2,
@@ -35,13 +38,12 @@ module CoolGirl #	(
 	reg sram_enabled;
 	reg chr_write_enabled;
 	reg prg_write_enabled;
-	reg mirroring;
+	reg [1:0] mirroring;
+	reg map_rom_on_6000;
 	reg lockout;
 
 	reg [18:13] cpu_addr_mapped;
-	assign cpu_addr_out[26:13] = romsel == 0 ? {cpu_base[26:14] | (cpu_addr_mapped[18:14] & ~cpu_mask[18:14]), cpu_addr_mapped[13]} : sram_page[1:0];
 	reg [17:10] ppu_addr_mapped;
-	assign ppu_addr_out[17:10] = {ppu_addr_mapped[17:13] & ~chr_mask[17:13], ppu_addr_mapped[12:10]};
 	
 	// some common registers for all mappers
 	reg [7:0] r0;
@@ -54,6 +56,11 @@ module CoolGirl #	(
 	reg [7:0] r7;
 	reg [7:0] r8;
 	reg [7:0] r9;
+	reg [7:0] r10;
+	reg [7:0] r11;
+	reg [7:0] r12;
+	reg [7:0] r13;
+	reg [7:0] r14;
 
 	reg [7:0] irq_scanline_counter;
 	reg [2:0] a12_low_time;
@@ -63,6 +70,21 @@ module CoolGirl #	(
 	reg irq_scanline_value;
 	reg irq_scanline_ready;	
 	reg irq_scanline_out;
+	reg irq_cpu_out;		
+	
+	assign cpu_addr_out[26:13] = ((romsel == 0) || (cpu_addr_in[14] & cpu_addr_in[13] & m2 & map_rom_on_6000)) ? // when ROMSEL is low of $6000-$7FFF accessed with map_rom_on_6000 on
+		{cpu_base[26:14] | (cpu_addr_mapped[18:14] & ~cpu_mask[18:14]), cpu_addr_mapped[13]} : sram_page[1:0];
+	assign ppu_addr_out[17:10] = {ppu_addr_mapped[17:13] & ~chr_mask[17:13], ppu_addr_mapped[12:10]};
+
+	assign flash_we = cpu_rw_in | romsel | ~prg_write_enabled;
+	assign flash_oe = ~cpu_rw_in | ~(~romsel | (cpu_addr_in[14] & cpu_addr_in[13] & m2 & map_rom_on_6000));
+	assign sram_ce = !(cpu_addr_in[14] & cpu_addr_in[13] & m2 & romsel & sram_enabled & ~map_rom_on_6000);
+	assign sram_we = cpu_rw_in;
+	assign sram_oe = ~cpu_rw_in;
+	assign ppu_rd_out = ppu_rd_in | ppu_addr_in[13];
+	assign ppu_wr_out = ppu_wr_in | ppu_addr_in[13] | ~chr_write_enabled;
+	assign irq = !(irq_scanline_out || irq_cpu_out) ? 1'bZ : 1'b0;
+	assign ppu_ciram_ce = 1'bZ; // for backward compatibility	
 	
 	// for MMC1
 	/*
@@ -82,8 +104,8 @@ module CoolGirl #	(
 	r9 - IRQ latch
 	*/
 	// for VRC
-	assign vrc_2b_hi = cpu_addr_in[1] | cpu_addr_in[3] | cpu_addr_in[5] | cpu_addr_in[7];
-	assign vrc_2b_low = cpu_addr_in[0] | cpu_addr_in[2] | cpu_addr_in[4] | cpu_addr_in[6];
+	wire vrc_2b_hi = cpu_addr_in[1] | cpu_addr_in[3] | cpu_addr_in[5] | cpu_addr_in[7];
+	wire vrc_2b_low = cpu_addr_in[0] | cpu_addr_in[2] | cpu_addr_in[4] | cpu_addr_in[6];
 	/*
 	r0[4:0] - PRG0 bank 
 	r1[4:0] - PRG1 bank 
@@ -96,6 +118,11 @@ module CoolGirl #	(
 	r7 - CHR5
 	r8 - CHR6
 	r9 - CHR7
+	r10 - IRQ latch
+	r11[2:0] - IRQ control
+	r11[4:3] - prescaler counter
+	r12 - IRQ value
+	r13 - IRQ prescaler value
 	*/
 	// for mapper #228 - Cheetahmen II :)
 	/*
@@ -104,17 +131,27 @@ module CoolGirl #	(
 	r2[4:0] - PRG bank
 	r3[1:0] - PRG chip... unused by Cheetahmen II
 	r4[0] - mirroring
+	*/
+	// for mapper #69 - Sunsoft FME-7
+	/*
+	r14 - command register
+	r0 - CHR bank 0
+	r1 - CHR bank 1
+	r2 - CHR bank 2
+	r3 - CHR bank 3
+	r4 - CHR bank 4
+	r5 - CHR bank 5
+	r6 - CHR bank 6
+	r7 - CHR bank 7
+	r8 - PRG bank 0
+	r9 - PRG bank 1
+	r10 - PRG bank 2
+	r11 - PRG bank 3
+	r9[7:6] - mirroring
+	r10[7:6] - IRQ control
+	r12 - IRQ low
+	r13 - IRQ high
 	*/	
-	
-	assign flash_we = cpu_rw_in | romsel | ~prg_write_enabled;
-	assign flash_oe = ~cpu_rw_in | romsel;
-	assign sram_ce = !(cpu_addr_in[14] & cpu_addr_in[13] & m2 & romsel & sram_enabled);
-	assign sram_we = cpu_rw_in;
-	assign sram_oe = ~cpu_rw_in;
-	assign ppu_rd_out = ppu_rd_in | ppu_addr_in[13];
-	assign ppu_wr_out = ppu_wr_in | ppu_addr_in[13] | ~chr_write_enabled;
-	assign irq = !irq_scanline_out ? 1'bZ : 1'b0;
-	assign ppu_ciram_ce = 1'bZ; // for backward compatibility
 	
 	always @ (negedge m2)
 	begin
@@ -148,7 +185,7 @@ module CoolGirl #	(
 					end
 					if (cpu_addr_in[2:0] == 3'b111) // $5xx7
 						// some other parameters
-						{lockout, mirroring, prg_write_enabled, chr_write_enabled, sram_enabled} = {cpu_data_in[7], cpu_data_in[3:0]};
+						{lockout, map_rom_on_6000, mirroring[1:0], prg_write_enabled, chr_write_enabled, sram_enabled} = {cpu_data_in[7], cpu_data_in[5:0]};
 				end
 			end else begin // $8000-$FFFF
 				// Mapper #1 - MMC1
@@ -212,8 +249,37 @@ module CoolGirl #	(
 				begin
 					r0 = cpu_data_in;
 				end	
+				// Mapper #33 + #48 - Taito
+				if (USE_TAITO && mapper[4:1] == 4'b1010)
+				begin
+					r8[3] = 0;
+					r8[4] = 0;
+					case ({cpu_addr_in[14:13], cpu_addr_in[1:0]})
+						4'b0000: begin
+							if (!mapper[0]) // #33
+							begin
+								r6 = {2'b00, cpu_data_in[5:0]}; // $8000, PRG Reg 0 (8k @ $8000)
+								r8[5] = cpu_data_in[6];
+							end else begin // #48
+								r6 = cpu_data_in; // $8000, PRG Reg 0 (8k @ $8000)
+							end
+						end
+						4'b0001: r7 = cpu_data_in; // $8001, PRG Reg 1 (8k @ $A000)
+						4'b0010: r0 = {cpu_data_in[6:0], 1'b0};  // $8002, CHR Reg 0 (2k @ $0000)
+						4'b0011: r1 = {cpu_data_in[6:0], 1'b0};  // $8003, CHR Reg 1 (2k @ $0800)
+						4'b0100: r2 = cpu_data_in;	// $A000, CHR Reg 2 (1k @ $1000)
+						4'b0101: r3 = cpu_data_in; // $A001, CHR Reg 2 (1k @ $1400)
+						4'b0110: r4 = cpu_data_in; // $A002, CHR Reg 2 (1k @ $1800)
+						4'b0111: r5 = cpu_data_in; // $A003, CHR Reg 2 (1k @ $1C00)
+						4'b1000: r9 = cpu_data_in; // $C000, IRQ latch
+						4'b1001: irq_scanline_reload = 1; // $C001, IRQ reload
+						4'b1010: irq_scanline_enabled = 1; // $C002, IRQ enable
+						4'b1011: irq_scanline_enabled = 0; // $C003, IRQ disable & ack
+						4'b1100: if (mapper[0]) r8[5] = cpu_data_in[6];	// $E000, mirroring, for mapper #48
+					endcase
+				end
 				// Mapper #23 - VRC2b
-				if (USE_VRC2 == 1 && mapper == 5'b10111)
+				if (USE_VRC2 && mapper == 5'b10111)
 				begin
 					// flags[0] to shift lines
 					case ({cpu_addr_in[14:12], flags[0] ? vrc_2b_low : vrc_2b_hi, flags[0] ? vrc_2b_hi : vrc_2b_low}) 
@@ -244,11 +310,59 @@ module CoolGirl #	(
 						5'b11000: r8[3:0] = cpu_data_in[3:0];  // $E000, CHR6 low
 						5'b11001: r8[7:4] = cpu_data_in[3:0];  // $E001, CHR6 hi
 						5'b11010: r9[3:0] = cpu_data_in[3:0];  // $E002, CHR7 low
-						5'b11011: r9[7:4] = cpu_data_in[3:0];  // $E003, CHR7 hi						
+						5'b11011: r9[7:4] = cpu_data_in[3:0];  // $E003, CHR7 hi
 					endcase
+					if (USE_VRC4_INTERRUPTS)
+					begin
+						case ({cpu_addr_in[14:12], flags[0] ? vrc_2b_low : vrc_2b_hi, flags[0] ? vrc_2b_hi : vrc_2b_low}) 
+							5'b11100: r10[3:0] = cpu_data_in[3:0];  // IRQ latch low
+							5'b11101: r10[7:4] = cpu_data_in[3:0];  // IRQ latch hi
+							5'b11110: begin // IRQ control
+								irq_cpu_out = 0; // ack
+								r11[2:0] = cpu_data_in[2:0]; // mode, enabled, enabled after ack
+								if (r11[1]) begin // if E is set
+									r11[4:3] = 2'b00; // reset prescaler
+									r13 = 0;
+									r12 = r10;			// reload with latch
+								end
+							end
+							5'b11111: begin // IRQ ack
+								irq_cpu_out = 0;
+								r11[1] = r11[0];							
+							end
+						endcase
+					end
+				end
+				if (USE_SUNSOFT && mapper == 5'b11110)
+				begin
+					if (cpu_addr_in[14:13] == 2'b00) r14[3:0] = cpu_data_in[3:0];
+					if (cpu_addr_in[14:13] == 2'b01)
+					begin
+						case (r14[3:0])
+							4'b0000: r0 = cpu_data_in; // CHR0
+							4'b0001: r1 = cpu_data_in; // CHR1
+							4'b0010: r2 = cpu_data_in; // CHR2
+							4'b0011: r3 = cpu_data_in; // CHR3
+							4'b0100: r4 = cpu_data_in; // CHR4
+							4'b0101: r5 = cpu_data_in; // CHR5
+							4'b0110: r6 = cpu_data_in; // CHR6
+							4'b0111: r7 = cpu_data_in; // CHR7
+							4'b1000: {sram_enabled, map_rom_on_6000, r8[5:0]} = {cpu_data_in[7], ~cpu_data_in[6], cpu_data_in[5:0]}; // PRG0
+							4'b1001: r9[5:0] = cpu_data_in[5:0]; // PRG1
+							4'b1010: r10[5:0] = cpu_data_in[5:0]; // PRG2
+							4'b1011: r11[5:0] = cpu_data_in[5:0]; // PRG3
+							4'b1100: r9[7:6] = cpu_data_in[1:0]; // mirroring
+							4'b1101: begin
+								r10[7:6] = {cpu_data_in[7], cpu_data_in[0]}; // IRQ control
+								irq_cpu_out = 0; // ack
+							end
+							4'b1110: r12 = cpu_data_in; // IRQ low
+							4'b1111: r13 = cpu_data_in; // IRQ high
+						endcase
+					end						
 				end
 				// Mapper #228 - Cheetahmen II
-				if (USE_CHEETAHMEN2 == 1 && mapper == 5'b11111)
+				if (USE_CHEETAHMEN2 && mapper == 5'b11111)
 				begin
 					r0[5:0] = {cpu_addr_in[3:0], cpu_data_in[1:0]};	// CHR bank
 					r1[0] = cpu_addr_in[5];									// PRG mode
@@ -262,6 +376,41 @@ module CoolGirl #	(
 		// some IRQ stuff
 		if (irq_scanline_reload_clear)
 			irq_scanline_reload = 0;
+		
+		// IRQ for VRC4
+		if (USE_VRC2 && USE_VRC4_INTERRUPTS && mapper == 5'b10111 && r11[1])
+		begin
+			if (r11[2]) // cycle mode
+			begin
+				r12 = r12 + 1; // just count IRQ value
+				if (r12 == 0)
+				begin
+					irq_cpu_out = 1;
+					r12 = r10;
+				end
+			end else begin // scanline mode
+				r13 = r13 + 1; // count prescaller
+				if ((r11[4] == 0 && r13 == 114) || (r11[4] == 1 && r13 == 113)) // 114, 114, 113
+				begin
+					r12 = r12 + 1;
+					r13 = 0;
+					r11[4:3] = r11[4:3]+1;
+					if (r11[4:3] == 2'b11) r11[4:3] =  2'b00;
+					if (r12 == 0)
+					begin
+						irq_cpu_out = 1;
+						r12 = r10;
+					end
+				end
+			end
+		end
+		
+		// IRQ for Sunsoft FME-7
+		if (USE_SUNSOFT && mapper == 5'b11110 && r10[7])
+		begin
+			if ({r13, r12} == 0 && r10[6]) irq_cpu_out = 1;
+			{r13, r12} = {r13, r12} - 1;
+		end
 	end
 
 	always @ (*)
@@ -271,7 +420,7 @@ module CoolGirl #	(
 		begin
 			cpu_addr_mapped = cpu_addr_in[14:13];
 			ppu_addr_mapped = {r0[4:0], ppu_addr_in[12:10]};		
-			ppu_ciram_a10 = !mirroring ? ppu_addr_in[10] : ppu_addr_in[11]; // vertical / horizontal			
+			ppu_ciram_a10 = !mirroring[0] ? ppu_addr_in[10] : ppu_addr_in[11]; // vertical / horizontal			
 		end
 		// Mapper #1 - MMC1
 		if (mapper == 5'b00001)
@@ -310,17 +459,19 @@ module CoolGirl #	(
 		begin
 			cpu_addr_mapped = {(cpu_addr_in[14] ? 5'b11111 : r0[4:0]), cpu_addr_in[13]};
 			ppu_addr_mapped = ppu_addr_in[12:10];		
-			ppu_ciram_a10 = !mirroring ? ppu_addr_in[10] : ppu_addr_in[11]; // vertical / horizontal			
+			ppu_ciram_a10 = !mirroring[0] ? ppu_addr_in[10] : ppu_addr_in[11]; // vertical / horizontal			
 		end
 		// Mapper #3 - CNROM
 		if (mapper == 5'b00011)
 		begin
 			cpu_addr_mapped = {cpu_addr_in[14:13]};
 			ppu_addr_mapped = {r0[4:0], ppu_addr_in[12:10]};		
-			ppu_ciram_a10 = !mirroring ? ppu_addr_in[10] : ppu_addr_in[11]; // vertical / horizontal			
+			ppu_ciram_a10 = !mirroring[0] ? ppu_addr_in[10] : ppu_addr_in[11]; // vertical / horizontal			
 		end
-		// Mapper #4 - MMC3/MMC6
-		if (mapper == 5'b00100)
+		// Mapper #4 - MMC3/MMC6 (00100)
+		// Mapper #33 - Taito    (10100)
+		// Mapper #48 - Taito    (10101)
+		if (mapper[3:1] == 3'b010)
 		begin
 			if (romsel == 0) // accessing $8000-$FFFF
 			begin
@@ -358,7 +509,7 @@ module CoolGirl #	(
 			ppu_ciram_a10 = r0[4];
 		end
 		// Mapper #23 - VRC2b
-		if (USE_VRC2 == 1 && mapper == 5'b10111)
+		if (USE_VRC2 && mapper == 5'b10111)
 		begin
 			cpu_addr_mapped = cpu_addr_in[14] ? {5'b11111, cpu_addr_in[13]} : {1'b0, !cpu_addr_in[13] ? r0[4:0] : r1[4:0]};
 			if (!flags[1]) // on VRC2a the low bit is ignored
@@ -387,6 +538,27 @@ module CoolGirl #	(
 			end
 			ppu_ciram_a10 = r0[7] ? r0[6] : (r0[6] ? ppu_addr_in[11] : ppu_addr_in[10]);
 		end
+		if (USE_SUNSOFT && mapper == 5'b11110)
+		begin
+			case ({~romsel, cpu_addr_in[14:13]})
+				3'b011: cpu_addr_mapped = r8[5:0]; // $6000 - $7FFF
+				3'b100: cpu_addr_mapped = r9[5:0]; // $8000 - $9FFF
+				3'b101: cpu_addr_mapped = r10[5:0]; // $A000 - $BFFF
+				3'b110: cpu_addr_mapped = r11[5:0]; // $C000 - $DFFF
+				3'b111: cpu_addr_mapped = 6'b111111; // $E000 - $FFFF
+			endcase
+			case (ppu_addr_in[12:10])
+				3'b000: ppu_addr_mapped = r0;
+				3'b001: ppu_addr_mapped = r1;
+				3'b010: ppu_addr_mapped = r2;
+				3'b011: ppu_addr_mapped = r3;
+				3'b100: ppu_addr_mapped = r4;
+				3'b101: ppu_addr_mapped = r5;
+				3'b110: ppu_addr_mapped = r6;
+				3'b111: ppu_addr_mapped = r7;
+			endcase
+			ppu_ciram_a10 = r9[7] ? r9[6] : (r9[6] ? ppu_addr_in[11] : ppu_addr_in[10]); // mirroring
+		end		
 		// Mapper #228 - Cheetahmen II
 		if (USE_CHEETAHMEN2 == 1 && mapper == 5'b11111)
 		begin
