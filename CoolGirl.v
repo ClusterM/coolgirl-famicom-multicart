@@ -38,7 +38,7 @@ module CoolGirl #	(
 	reg sram_enabled;
 	reg chr_write_enabled;
 	reg prg_write_enabled;
-	reg [1:0] mirroring;
+	reg mirroring;
 	reg map_rom_on_6000;
 	reg lockout;
 
@@ -185,7 +185,7 @@ module CoolGirl #	(
 					end
 					if (cpu_addr_in[2:0] == 3'b111) // $5xx7
 						// some other parameters
-						{lockout, map_rom_on_6000, mirroring[1:0], prg_write_enabled, chr_write_enabled, sram_enabled} = {cpu_data_in[7], cpu_data_in[5:0]};
+						{lockout, mirroring, prg_write_enabled, chr_write_enabled, sram_enabled} = {cpu_data_in[7], cpu_data_in[3:0]};
 				end
 			end else begin // $8000-$FFFF
 				// Mapper #1 - MMC1
@@ -213,7 +213,7 @@ module CoolGirl #	(
 				if (mapper == 5'b00010)
 				begin
 					r0 = cpu_data_in;
-				end				
+				end
 				// Mapper #3 - CNROM
 				if (mapper == 5'b00011)
 				begin
@@ -250,7 +250,7 @@ module CoolGirl #	(
 					r0 = cpu_data_in;
 				end	
 				// Mapper #33 + #48 - Taito
-				if (USE_TAITO && mapper[4:1] == 4'b1010)
+				if (USE_TAITO && (mapper[4:0] == 5'b10100 || mapper[4:0] == 5'b10101))
 				begin
 					r8[3] = 0;
 					r8[4] = 0;
@@ -418,9 +418,9 @@ module CoolGirl #	(
 		// Mapper #0 - NROM
 		if (mapper == 5'b00000)
 		begin
-			cpu_addr_mapped = cpu_addr_in[14:13];
+			cpu_addr_mapped = cpu_addr_in[14] ? cpu_addr_in[14:13] : (cpu_addr_in[14:13] | {r0[7:5], 1'b0});
 			ppu_addr_mapped = {r0[4:0], ppu_addr_in[12:10]};		
-			ppu_ciram_a10 = !mirroring[0] ? ppu_addr_in[10] : ppu_addr_in[11]; // vertical / horizontal			
+			ppu_ciram_a10 = !mirroring ? ppu_addr_in[10] : ppu_addr_in[11]; // vertical / horizontal			
 		end
 		// Mapper #1 - MMC1
 		if (mapper == 5'b00001)
@@ -459,14 +459,14 @@ module CoolGirl #	(
 		begin
 			cpu_addr_mapped = {(cpu_addr_in[14] ? 5'b11111 : r0[4:0]), cpu_addr_in[13]};
 			ppu_addr_mapped = ppu_addr_in[12:10];		
-			ppu_ciram_a10 = !mirroring[0] ? ppu_addr_in[10] : ppu_addr_in[11]; // vertical / horizontal			
+			ppu_ciram_a10 = !mirroring ? ppu_addr_in[10] : ppu_addr_in[11]; // vertical / horizontal			
 		end
 		// Mapper #3 - CNROM
 		if (mapper == 5'b00011)
 		begin
 			cpu_addr_mapped = {cpu_addr_in[14:13]};
 			ppu_addr_mapped = {r0[4:0], ppu_addr_in[12:10]};		
-			ppu_ciram_a10 = !mirroring[0] ? ppu_addr_in[10] : ppu_addr_in[11]; // vertical / horizontal			
+			ppu_ciram_a10 = !mirroring ? ppu_addr_in[10] : ppu_addr_in[11]; // vertical / horizontal			
 		end
 		// Mapper #4 - MMC3/MMC6 (00100)
 		// Mapper #33 - Taito    (10100)
