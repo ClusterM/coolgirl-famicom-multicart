@@ -2,13 +2,13 @@ module CoolGirl #	(
 		parameter USE_VRC2 = 1,				// mappers #21, #22, #23, #25
 		parameter USE_VRC2a = 1,
 		parameter USE_VRC4_INTERRUPTS = 1,
-		parameter USE_TAITO = 0,			// mappers #33 & #48
+		parameter USE_TAITO = 1,			// mappers #33 & #48
 		parameter USE_SUNSOFT = 0, 		// mapper #69
-		parameter USE_MAPPER_78 = 1,		// mapper #78
-		parameter USE_COLOR_DREAMS = 1,	// mapper #11
-		parameter USE_GxROM = 1,			// mapper #66
-		parameter USE_CHEETAHMEN2 = 1, 	// mapper #228
-		parameter USE_FIRE_HAWK = 1		// for Fire Hawk only
+		parameter USE_MAPPER_78 = 0,		// mapper #78
+		parameter USE_COLOR_DREAMS = 0,	// mapper #11
+		parameter USE_GxROM = 0,			// mapper #66
+		parameter USE_CHEETAHMEN2 = 0, 	// mapper #228
+		parameter USE_FIRE_HAWK = 0		// for Fire Hawk only
 	)
 	(
 	input	m2,
@@ -68,8 +68,9 @@ module CoolGirl #	(
 	reg [7:0] r14;
 
 	reg [7:0] irq_scanline_counter;
-	reg [2:0] a12_low_time;
+	reg [1:0] a12_low_time;
 	reg irq_scanline_reload;
+	reg [7:0] irq_scanline_latch;
 	reg irq_scanline_reload_clear;
 	reg irq_scanline_enabled;
 	reg irq_scanline_value;
@@ -108,11 +109,14 @@ module CoolGirl #	(
 	r8[4] - CHR mode
 	r8[5] - mirroring
 	r8[7:6] - RAM protect
-	r9 - IRQ latch
 	*/
 	// for VRC
 	wire vrc_2b_hi = cpu_addr_in[1] | cpu_addr_in[3] | cpu_addr_in[5] | cpu_addr_in[7];
 	wire vrc_2b_low = cpu_addr_in[0] | cpu_addr_in[2] | cpu_addr_in[4] | cpu_addr_in[6];
+	reg [7:0] vrc4_irq_value;
+	reg [6:0] vrc4_irq_prescaler;
+		
+	
 	/*
 	r8[4:0] - PRG0 bank 
 	r9[4:0] - PRG1 bank 
@@ -178,7 +182,7 @@ module CoolGirl #	(
 					if (cpu_addr_in[2:0] == 3'b100) // $5xx4
 						chr_mask[17:13] = cpu_data_in[4:0];	// CHR mask A17-A13
 					if (cpu_addr_in[2:0] == 3'b101) // $5xx5
-						{r1[4:0], sram_page} = cpu_data_in[7:0]; // direct r1 access, current SRAM page 0-3
+						{r1[5:0], sram_page[1:0]} = cpu_data_in[7:0]; // direct r1 access, current SRAM page 0-3
 					if (cpu_addr_in[2:0] == 3'b110) // $5xx6
 						{flags[2:0], mapper[4:0]} = cpu_data_in[7:0];	// some flags, mapper
 					if (cpu_addr_in[2:0] == 3'b111) // $5xx7
@@ -199,11 +203,13 @@ module CoolGirl #	(
 							r1 = cpu_data_in[3:0];
 					end
 				end
+				
 				// Mapper #3 - CNROM
 				if (mapper == 5'b00010)
 				begin
 					r0 = cpu_data_in;
 				end
+				
 				// Mapper #78 - Holy Diver 
 				if (USE_MAPPER_78 && mapper == 5'b00011)
 				begin
@@ -211,12 +217,14 @@ module CoolGirl #	(
 					r1 = cpu_data_in[2:0];
 					mirroring = {1'b0, ~cpu_data_in[3]};
 				end
+				
 				// Mapper #7 - AxROM
 				if (mapper == 5'b01000)
 				begin
 					r1[4:0] = cpu_data_in[4:0];
 					mirroring = {1'b1, cpu_data_in[4]};
-				end	
+				end
+				
 				// Mapper #228 - Cheetahmen II
 				if (USE_CHEETAHMEN2 && mapper == 5'b01001)
 				begin
@@ -224,19 +232,21 @@ module CoolGirl #	(
 					r1[4:0] = {1'b0, cpu_addr_in[10:7]};				// PRG bank
 					mirroring = {1'b0, cpu_addr_in[13]};				// mirroring
 				end
+				
 				// Mapper #11 - ColorDreams
 				if (USE_COLOR_DREAMS && mapper == 5'b01010)
 				begin
 					r1[4:0] = cpu_data_in[1:0];
 					r0[4:0] = cpu_data_in[7:4];					
-				end	
+				end
+				
 				// Mapper #66 - GxROM
 				if (USE_GxROM && mapper == 5'b01011)
 				begin
 					r0[4:0] = cpu_data_in[1:0];
 					r1[4:0] = cpu_data_in[5:4];					
-				end	
-
+				end
+				
 				// Mapper #1 - MMC1
 				if (mapper[4:2] == 3'b100)
 				begin
@@ -277,8 +287,8 @@ module CoolGirl #	(
 							endcase
 						end
 						3'b010: mirroring = cpu_data_in[0]; //r8[5] = cpu_data_in[0]; // $A000-$BFFE, even
-						3'b011: r8[7:6] = cpu_data_in[7:6]; // $A001-$BFFF, odd
-						3'b100: r9 = cpu_data_in; // $C000-$DFFE, even (IRQ latch)
+						//3'b011: r8[7:6] = cpu_data_in[7:6]; // $A001-$BFFF, odd - RAM protect
+						3'b100: irq_scanline_latch = cpu_data_in; // $C000-$DFFE, even (IRQ latch)
 						3'b101: irq_scanline_reload = 1; // $C001-$DFFF, odd
 						3'b110: irq_scanline_enabled = 0; // $E000-$FFFE, even
 						3'b111: irq_scanline_enabled = 1; // $E001-$FFFF, odd
@@ -307,7 +317,7 @@ module CoolGirl #	(
 						4'b0101: r3 = cpu_data_in; // $A001, CHR Reg 2 (1k @ $1400)
 						4'b0110: r4 = cpu_data_in; // $A002, CHR Reg 2 (1k @ $1800)
 						4'b0111: r5 = cpu_data_in; // $A003, CHR Reg 2 (1k @ $1C00)
-						4'b1000: r9 = cpu_data_in; // $C000, IRQ latch
+						4'b1000: irq_scanline_latch = ~cpu_data_in; // $C000, IRQ latch
 						4'b1001: irq_scanline_reload = 1; // $C001, IRQ reload
 						4'b1010: irq_scanline_enabled = 1; // $C002, IRQ enable
 						4'b1011: irq_scanline_enabled = 0; // $C003, IRQ disable & ack
@@ -371,6 +381,7 @@ module CoolGirl #	(
 					end
 				end
 
+				// Mapper #69 - Sunsoft FME-7
 				if (USE_SUNSOFT && mapper == 5'b11001)
 				begin
 					if (cpu_addr_in[14:13] == 2'b00) r14[3:0] = cpu_data_in[3:0];
@@ -411,24 +422,24 @@ module CoolGirl #	(
 		begin
 			if (r11[2]) // cycle mode
 			begin
-				r12 = r12 + 1; // just count IRQ value
-				if (r12 == 0)
+				vrc4_irq_value = vrc4_irq_value + 1; // just count IRQ value
+				if (vrc4_irq_value == 0)
 				begin
 					irq_cpu_out = 1;
-					r12 = r10;
+					vrc4_irq_value = r10;
 				end
 			end else begin // scanline mode
-				r13 = r13 + 1; // count prescaller
-				if ((r11[4] == 0 && r13 == 114) || (r11[4] == 1 && r13 == 113)) // 114, 114, 113
+				vrc4_irq_prescaler = vrc4_irq_prescaler + 1; // count prescaler
+				if ((r11[4] == 0 && vrc4_irq_prescaler == 114) || (r11[4] == 1 && vrc4_irq_prescaler == 113)) // 114, 114, 113
 				begin
-					r12 = r12 + 1;
-					r13 = 0;
+					vrc4_irq_value = vrc4_irq_value + 1;
+					vrc4_irq_prescaler = 0;
 					r11[4:3] = r11[4:3]+1;
 					if (r11[4:3] == 2'b11) r11[4:3] =  2'b00;
-					if (r12 == 0)
+					if (vrc4_irq_value == 0)
 					begin
 						irq_cpu_out = 1;
-						r12 = r10;
+						vrc4_irq_value = r10;
 					end
 				end
 			end
@@ -456,7 +467,7 @@ module CoolGirl #	(
 			// r0[4:0] - 8k CHR bank
 			// r1 - PRG bank
 			begin
-				cpu_addr_mapped = {r1, cpu_addr_in[14:13]};
+				cpu_addr_mapped = {r1[3:0], cpu_addr_in[14:13]};
 			end
 			ppu_addr_mapped = {r0[4:0], ppu_addr_in[12:10]};
 		end
@@ -587,7 +598,7 @@ module CoolGirl #	(
 			//irq_scanline_counter_last = irq_scanline_counter;
 			if ((irq_scanline_reload && !irq_scanline_reload_clear) || (irq_scanline_counter == 0))
 			begin
-				irq_scanline_counter = r9;
+				irq_scanline_counter = irq_scanline_latch;
 				if (irq_scanline_reload) irq_scanline_reload_clear = 1;
 			end else
 				irq_scanline_counter = irq_scanline_counter-1;
