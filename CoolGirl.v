@@ -3,6 +3,7 @@ module CoolGirl #	(
 		parameter USE_VRC2a = 1,
 		parameter USE_VRC4_INTERRUPTS = 1,
 		parameter USE_TAITO = 1,			// mappers #33 & #48
+		parameter USE_TAITO_INTERRUPTS = 0,	// for mapper #48
 		parameter USE_SUNSOFT = 0, 		// mapper #69
 		parameter USE_MAPPER_78 = 0,		// mapper #78
 		parameter USE_COLOR_DREAMS = 0,	// mapper #11
@@ -317,12 +318,17 @@ module CoolGirl #	(
 						4'b0101: r3 = cpu_data_in; // $A001, CHR Reg 2 (1k @ $1400)
 						4'b0110: r4 = cpu_data_in; // $A002, CHR Reg 2 (1k @ $1800)
 						4'b0111: r5 = cpu_data_in; // $A003, CHR Reg 2 (1k @ $1C00)
-						4'b1000: irq_scanline_latch = ~cpu_data_in; // $C000, IRQ latch
-						4'b1001: irq_scanline_reload = 1; // $C001, IRQ reload
-						4'b1010: irq_scanline_enabled = 1; // $C002, IRQ enable
-						4'b1011: irq_scanline_enabled = 0; // $C003, IRQ disable & ack
 						4'b1100: if (mapper[0]) mirroring = cpu_data_in[6];	// $E000, mirroring, for mapper #48
 					endcase
+					if (USE_TAITO_INTERRUPTS)
+					begin
+						case ({cpu_addr_in[14:13], cpu_addr_in[1:0]})
+							4'b1000: irq_scanline_latch = ~cpu_data_in; // $C000, IRQ latch
+							4'b1001: irq_scanline_reload = 1; // $C001, IRQ reload
+							4'b1010: irq_scanline_enabled = 1; // $C002, IRQ enable
+							4'b1011: irq_scanline_enabled = 0; // $C003, IRQ disable & ack
+						endcase
+					end
 				end
 				
 				// Mapper #23 - VRC2/4
