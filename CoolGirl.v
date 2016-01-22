@@ -1,13 +1,13 @@
 module CoolGirl #	(
 		parameter USE_VRC2 = 1,				// mappers #21, #22, #23, #25
 		parameter USE_VRC2a = 1,
-		parameter USE_VRC4_INTERRUPTS = 1,
-		parameter USE_TAITO = 1,			// mappers #33 & #48
+		parameter USE_VRC4_INTERRUPTS = 0,
+		parameter USE_TAITO = 0,			// mappers #33 & #48
 		parameter USE_TAITO_INTERRUPTS = 0,	// for mapper #48
-		parameter USE_SUNSOFT = 0, 		// mapper #69
-		parameter USE_MAPPER_78 = 0,		// mapper #78
-		parameter USE_COLOR_DREAMS = 0,	// mapper #11
-		parameter USE_GxROM = 0,			// mapper #66
+		parameter USE_SUNSOFT = 1, 		// mapper #69
+		parameter USE_MAPPER_78 = 1,		// mapper #78
+		parameter USE_COLOR_DREAMS = 1,	// mapper #11
+		parameter USE_GxROM = 1,			// mapper #66
 		parameter USE_CHEETAHMEN2 = 0, 	// mapper #228
 		parameter USE_FIRE_HAWK = 0		// for Fire Hawk only
 	)
@@ -114,6 +114,7 @@ module CoolGirl #	(
 	// for VRC
 	wire vrc_2b_hi = cpu_addr_in[1] | cpu_addr_in[3] | cpu_addr_in[5] | cpu_addr_in[7];
 	wire vrc_2b_low = cpu_addr_in[0] | cpu_addr_in[2] | cpu_addr_in[4] | cpu_addr_in[6];
+	reg [7:0] vrc4_irq_latch;
 	reg [7:0] vrc4_irq_value;
 	reg [6:0] vrc4_irq_prescaler;
 	reg [1:0] vrc4_irq_prescaler_counter;	
@@ -368,15 +369,15 @@ module CoolGirl #	(
 					if (USE_VRC4_INTERRUPTS)
 					begin
 						case ({cpu_addr_in[14:12], flags[0] ? vrc_2b_low : vrc_2b_hi, flags[0] ? vrc_2b_hi : vrc_2b_low}) 
-							5'b11100: r10[3:0] = cpu_data_in[3:0];  // IRQ latch low
-							5'b11101: r10[7:4] = cpu_data_in[3:0];  // IRQ latch hi
+							5'b11100: vrc4_irq_latch[3:0] = cpu_data_in[3:0];  // IRQ latch low
+							5'b11101: vrc4_irq_latch[7:4] = cpu_data_in[3:0];  // IRQ latch hi
 							5'b11110: begin // IRQ control
 								irq_cpu_out = 0; // ack
 								r11[2:0] = cpu_data_in[2:0]; // mode, enabled, enabled after ack
 								if (r11[1]) begin // if E is set
 									vrc4_irq_prescaler_counter = 2'b00; // reset prescaler
 									vrc4_irq_prescaler = 0;
-									vrc4_irq_value = r10;			// reload with latch
+									vrc4_irq_value = vrc4_irq_latch;			// reload with latch
 								end
 							end
 							5'b11111: begin // IRQ ack
@@ -432,7 +433,7 @@ module CoolGirl #	(
 				if (vrc4_irq_value == 0)
 				begin
 					irq_cpu_out = 1;
-					vrc4_irq_value = r10;
+					vrc4_irq_value = vrc4_irq_latch;
 				end
 			end else begin // scanline mode
 				vrc4_irq_prescaler = vrc4_irq_prescaler + 1; // count prescaler
@@ -445,7 +446,7 @@ module CoolGirl #	(
 					if (vrc4_irq_value == 0)
 					begin
 						irq_cpu_out = 1;
-						vrc4_irq_value = r10;
+						vrc4_irq_value = vrc4_irq_latch;
 					end
 				end
 			end
