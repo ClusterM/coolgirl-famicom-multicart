@@ -115,7 +115,7 @@ module CoolGirl #	(
 	wire vrc_2b_low = cpu_addr_in[0] | cpu_addr_in[2] | cpu_addr_in[4] | cpu_addr_in[6];
 	reg [7:0] vrc4_irq_value;
 	reg [6:0] vrc4_irq_prescaler;
-		
+	reg [1:0] vrc4_irq_prescaler_counter;	
 	
 	/*
 	r8[4:0] - PRG0 bank 
@@ -368,9 +368,9 @@ module CoolGirl #	(
 								irq_cpu_out = 0; // ack
 								r11[2:0] = cpu_data_in[2:0]; // mode, enabled, enabled after ack
 								if (r11[1]) begin // if E is set
-									r11[4:3] = 2'b00; // reset prescaler
-									r13 = 0;
-									r12 = r10;			// reload with latch
+									vrc4_irq_prescaler_counter = 2'b00; // reset prescaler
+									vrc4_irq_prescaler = 0;
+									vrc4_irq_value = r10;			// reload with latch
 								end
 							end
 							5'b11111: begin // IRQ ack
@@ -430,12 +430,12 @@ module CoolGirl #	(
 				end
 			end else begin // scanline mode
 				vrc4_irq_prescaler = vrc4_irq_prescaler + 1; // count prescaler
-				if ((r11[4] == 0 && vrc4_irq_prescaler == 114) || (r11[4] == 1 && vrc4_irq_prescaler == 113)) // 114, 114, 113
+				if ((vrc4_irq_prescaler_counter[1] == 0 && vrc4_irq_prescaler == 114) || (vrc4_irq_prescaler_counter[1] == 1 && vrc4_irq_prescaler == 113)) // 114, 114, 113
 				begin
 					vrc4_irq_value = vrc4_irq_value + 1;
 					vrc4_irq_prescaler = 0;
-					r11[4:3] = r11[4:3]+1;
-					if (r11[4:3] == 2'b11) r11[4:3] =  2'b00;
+					vrc4_irq_prescaler_counter = vrc4_irq_prescaler_counter+1;
+					if (vrc4_irq_prescaler_counter == 2'b11) vrc4_irq_prescaler_counter =  2'b00;
 					if (vrc4_irq_value == 0)
 					begin
 						irq_cpu_out = 1;
