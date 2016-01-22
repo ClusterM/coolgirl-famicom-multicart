@@ -5,11 +5,12 @@ module CoolGirl #	(
 		parameter USE_TAITO = 0,			// mappers #33 & #48
 		parameter USE_TAITO_INTERRUPTS = 0,	// for mapper #48
 		parameter USE_SUNSOFT = 1, 		// mapper #69
-		parameter USE_MAPPER_78 = 1,		// mapper #78
+		parameter USE_MAPPER_78 = 0,		// mapper #78
 		parameter USE_COLOR_DREAMS = 1,	// mapper #11
 		parameter USE_GxROM = 1,			// mapper #66
 		parameter USE_CHEETAHMEN2 = 0, 	// mapper #228
-		parameter USE_FIRE_HAWK = 0		// for Fire Hawk only
+		parameter USE_FIRE_HAWK = 0,		// for Fire Hawk only (mapper #71)
+		parameter USE_TxSROM = 1			// mapper #118
 	)
 	(
 	input	m2,
@@ -30,7 +31,7 @@ module CoolGirl #	(
 	output [17:10] ppu_addr_out,
 	output ppu_rd_out,
 	output ppu_wr_out,
-	output ppu_ciram_a10,
+	output reg ppu_ciram_a10,
 	output ppu_ciram_ce,
 		
 	output irq
@@ -91,8 +92,6 @@ module CoolGirl #	(
 	assign ppu_rd_out = ppu_rd_in | ppu_addr_in[13];
 	assign ppu_wr_out = ppu_wr_in | ppu_addr_in[13] | ~chr_write_enabled;
 	assign irq = !(irq_scanline_out || irq_cpu_out) ? 1'bZ : 1'b0;
-	// mirroring
-	assign ppu_ciram_a10 = !mirroring[1] ? (!mirroring[0] ? ppu_addr_in[10] : ppu_addr_in[11]) : mirroring[0]; // vertical / horizontal, 1Sa, 1Sb
 	assign ppu_ciram_ce = 1'bZ; // for backward compatibility	
 	
 	// for MMC1
@@ -477,6 +476,8 @@ module CoolGirl #	(
 				cpu_addr_mapped = {r1[3:0], cpu_addr_in[14:13]};
 			end
 			ppu_addr_mapped = {r0[4:0], ppu_addr_in[12:10]};
+			// mirroring
+			ppu_ciram_a10 = !mirroring[1] ? (!mirroring[0] ? ppu_addr_in[10] : ppu_addr_in[11]) : mirroring[0]; // vertical / horizontal, 1Sa, 1Sb			
 		end
 		// Mapper #1 - MMC1
 		if (mapper[4:2] == 3'b100)
@@ -503,6 +504,8 @@ module CoolGirl #	(
 					else
 						ppu_addr_mapped = {r3[4:0], ppu_addr_in[11:10]}; // second bank
 			endcase		
+			// mirroring
+			ppu_ciram_a10 = !mirroring[1] ? (!mirroring[0] ? ppu_addr_in[10] : ppu_addr_in[11]) : mirroring[0]; // vertical / horizontal, 1Sa, 1Sb			
 		end		
 		
 		// MMC3 based mappers
@@ -533,6 +536,13 @@ module CoolGirl #	(
 					2'b10: ppu_addr_mapped = r4;
 					2'b11: ppu_addr_mapped = r5;
 				endcase
+			end
+			// mirroring
+			if (!USE_TxSROM || !flags[0])
+			begin // normal operation
+				ppu_ciram_a10 = !mirroring[1] ? (!mirroring[0] ? ppu_addr_in[10] : ppu_addr_in[11]) : mirroring[0]; // vertical / horizontal, 1Sa, 1Sb
+			end else begin // TxSROM
+				ppu_ciram_a10 = ppu_addr_mapped[17];
 			end
 		end
 	
@@ -581,6 +591,8 @@ module CoolGirl #	(
 					3'b111: ppu_addr_mapped = {1'b0, r7[7:1]};
 				endcase
 			end
+			// mirroring
+			ppu_ciram_a10 = !mirroring[1] ? (!mirroring[0] ? ppu_addr_in[10] : ppu_addr_in[11]) : mirroring[0]; // vertical / horizontal, 1Sa, 1Sb			
 		end
 	end
 
