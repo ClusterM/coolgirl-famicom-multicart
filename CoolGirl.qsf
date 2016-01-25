@@ -120,7 +120,6 @@ set_location_assignment PIN_61 -to ppu_rd_in
 set_location_assignment PIN_26 -to ppu_rd_out
 set_location_assignment PIN_62 -to ppu_wr_in
 set_location_assignment PIN_34 -to ppu_wr_out
-set_location_assignment PIN_44 -to reset
 set_location_assignment PIN_67 -to romsel
 set_location_assignment PIN_76 -to sram_ce
 set_location_assignment PIN_75 -to sram_oe
@@ -132,3 +131,6 @@ set_global_assignment -name USE_CONFIGURATION_DEVICE ON
 set_global_assignment -name VERILOG_INPUT_VERSION SYSTEMVERILOG_2005
 set_global_assignment -name VERILOG_SHOW_LMF_MAPPING_MESSAGES OFF
 set_global_assignment -name CDF_FILE output_files/CoolGirl.cdf
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to romsel
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to cpu_rw_in
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to ppu_rd_in
