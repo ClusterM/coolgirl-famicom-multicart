@@ -486,15 +486,15 @@ module CoolGirl #	(
 			begin
 				case (r1[3:2])			
 					2'b00,
-					2'b01: cpu_addr_mapped = {r4[3:1], cpu_addr_in[14:13]}; // 32KB bank mode
+					2'b01: cpu_addr_mapped = {ppu_addr_mapped[16], r4[3:1], cpu_addr_in[14:13]}; // 32KB bank mode
 					2'b10: if (cpu_addr_in[14] == 0) // $8000-$BFFF
-							cpu_addr_mapped = cpu_addr_in[13]; // fixed to the first bank
+							cpu_addr_mapped = {ppu_addr_mapped[16], 4'b0000, cpu_addr_in[13]}; // fixed to the first bank
 						else // $C000-$FFFF
-							cpu_addr_mapped = {r4[3:0], cpu_addr_in[13]};  // 16KB bank selected
+							cpu_addr_mapped = {ppu_addr_mapped[16], r4[3:0], cpu_addr_in[13]};  // 16KB bank selected
 					2'b11: if (cpu_addr_in[14] == 0) // $8000-$BFFF
-							cpu_addr_mapped = {r4[3:0], cpu_addr_in[13]};  // 16KB bank selected
+							cpu_addr_mapped = {ppu_addr_mapped[16], r4[3:0], cpu_addr_in[13]};  // 16KB bank selected
 						else // $C000-$FFFF
-							cpu_addr_mapped = {4'b1111, cpu_addr_in[13]};	// fixed to the last bank
+							cpu_addr_mapped = {ppu_addr_mapped[16], 4'b1111, cpu_addr_in[13]};	// fixed to the last bank
 				endcase
 			end
 			case (r1[4])
