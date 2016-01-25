@@ -1,14 +1,14 @@
 module CoolGirl #	(
 		parameter USE_VRC2 = 1,				// mappers #21, #22, #23, #25
 		parameter USE_VRC2a = 1,
-		parameter USE_VRC4_INTERRUPTS = 0,
-		parameter USE_TAITO = 0,			// mappers #33 & #48
+		parameter USE_VRC4_INTERRUPTS = 1,
+		parameter USE_TAITO = 1,			// mappers #33 & #48
 		parameter USE_TAITO_INTERRUPTS = 0,	// for mapper #48
-		parameter USE_SUNSOFT = 1, 		// mapper #69
+		parameter USE_SUNSOFT = 0, 		// mapper #69
 		parameter USE_MAPPER_78 = 0,		// mapper #78
-		parameter USE_COLOR_DREAMS = 1,	// mapper #11
-		parameter USE_GxROM = 1,			// mapper #66
-		parameter USE_CHEETAHMEN2 = 0, 	// mapper #228
+		parameter USE_COLOR_DREAMS = 0,	// mapper #11
+		parameter USE_GxROM = 0,			// mapper #66
+		parameter USE_CHEETAHMEN2 = 1, 	// mapper #228
 		parameter USE_FIRE_HAWK = 0,		// for Fire Hawk only (mapper #71)
 		parameter USE_TxSROM = 1			// mapper #118
 	)
@@ -86,7 +86,7 @@ module CoolGirl #	(
 
 	assign flash_we = cpu_rw_in | romsel | ~prg_write_enabled;
 	assign flash_oe = ~cpu_rw_in | ~(~romsel | (cpu_addr_in[14] & cpu_addr_in[13] & m2 & map_rom_on_6000));
-	assign sram_ce = !(cpu_addr_in[14] & cpu_addr_in[13] & m2 & romsel & sram_enabled & ~map_rom_on_6000);
+	assign sram_ce = ~(cpu_addr_in[14] & cpu_addr_in[13] & m2 & romsel & sram_enabled & ~map_rom_on_6000);
 	assign sram_we = cpu_rw_in;
 	assign sram_oe = ~cpu_rw_in;
 	assign ppu_rd_out = ppu_rd_in | ppu_addr_in[13];
@@ -287,7 +287,7 @@ module CoolGirl #	(
 								3'b111: r7 = cpu_data_in;
 							endcase
 						end
-						3'b010: mirroring = cpu_data_in[0]; //r8[5] = cpu_data_in[0]; // $A000-$BFFE, even
+						3'b010: mirroring = {1'b0, cpu_data_in[0]}; //r8[5] = cpu_data_in[0]; // $A000-$BFFE, even
 						//3'b011: r8[7:6] = cpu_data_in[7:6]; // $A001-$BFFF, odd - RAM protect
 						3'b100: irq_scanline_latch = cpu_data_in; // $C000-$DFFE, even (IRQ latch)
 						3'b101: irq_scanline_reload = 1; // $C001-$DFFF, odd
