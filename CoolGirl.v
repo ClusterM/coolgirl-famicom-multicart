@@ -69,17 +69,6 @@ module CoolGirl #	(
 	reg [7:0] r13;
 	reg [7:0] r14;
 
-	reg [7:0] irq_scanline_counter;
-	reg [1:0] a12_low_time;
-	reg irq_scanline_reload;
-	reg [7:0] irq_scanline_latch;
-	reg irq_scanline_reload_clear;
-	reg irq_scanline_enabled;
-	reg irq_scanline_value;
-	reg irq_scanline_ready;	
-	reg irq_scanline_out;
-	reg irq_cpu_out;		
-	
 	assign cpu_addr_out[26:13] = ((romsel == 0) || (cpu_addr_in[14] & cpu_addr_in[13] & m2 & map_rom_on_6000)) ? // when ROMSEL is low of $6000-$7FFF accessed with map_rom_on_6000 on
 		{cpu_base[26:14] | (cpu_addr_mapped[18:14] & ~cpu_mask[18:14]), cpu_addr_mapped[13]} : sram_page[1:0];
 	assign ppu_addr_out[17:10] = {ppu_addr_mapped[17:13] & ~chr_mask[17:13], ppu_addr_mapped[12:10]};
@@ -93,76 +82,25 @@ module CoolGirl #	(
 	assign ppu_wr_out = ppu_wr_in | ppu_addr_in[13] | ~chr_write_enabled;
 	assign irq = !(irq_scanline_out || irq_cpu_out) ? 1'bZ : 1'b0;
 	assign ppu_ciram_ce = 1'bZ; // for backward compatibility	
-	
-	// for MMC1
-	/*
-	r0 - load register
-	r1 - control
-	r2 - chr0_bank
-	r3 - chr1_bank
-	r4 - prg_bank
-	*/
-	// for MMC3
-	/*
-	r8[2:0] - bank_select
-	r8[3] - PRG mode
-	r8[4] - CHR mode
-	r8[5] - mirroring
-	r8[7:6] - RAM protect
-	*/
-	// for VRC
-	wire vrc_2b_hi = cpu_addr_in[1] | cpu_addr_in[3] | cpu_addr_in[5] | cpu_addr_in[7];
-	wire vrc_2b_low = cpu_addr_in[0] | cpu_addr_in[2] | cpu_addr_in[4] | cpu_addr_in[6];
+
+	// for interrupts
+	reg [7:0] irq_scanline_counter;
+	reg [1:0] a12_low_time;
+	reg irq_scanline_reload;
+	reg [7:0] irq_scanline_latch;
+	reg irq_scanline_reload_clear;
+	reg irq_scanline_enabled;
+	reg irq_scanline_value;
+	reg irq_scanline_ready;	
+	reg irq_scanline_out;
+	reg irq_cpu_out;		
 	reg [7:0] vrc4_irq_latch;
 	reg [7:0] vrc4_irq_value;
 	reg [6:0] vrc4_irq_prescaler;
-	reg [1:0] vrc4_irq_prescaler_counter;	
-	
-	/*
-	r8[4:0] - PRG0 bank 
-	r9[4:0] - PRG1 bank 
-	r0 - CHR0
-	r1 - CHR1
-	r2 - CHR2
-	r3 - CHR3
-	r4 - CHR4
-	r5 - CHR5
-	r6 - CHR6
-	r7 - CHR7
-	r10 - IRQ latch
-	r11[2:0] - IRQ control
-	r11[4:3] - prescaler counter
-	r12 - IRQ value
-	r13 - IRQ prescaler value
-	*/
-	// for mapper #228 - Cheetahmen II :)
-	/*
-	r0[5:0] - CHR bank
-	r1[0] - PRG mode
-	r2[4:0] - PRG bank
-	r3[1:0] - PRG chip... unused by Cheetahmen II
-	r4[0] - mirroring
-	*/
-	// for mapper #69 - Sunsoft FME-7
-	/*
-	r14 - command register
-	r0 - CHR bank 0
-	r1 - CHR bank 1
-	r2 - CHR bank 2
-	r3 - CHR bank 3
-	r4 - CHR bank 4
-	r5 - CHR bank 5
-	r6 - CHR bank 6
-	r7 - CHR bank 7
-	r8 - PRG bank 0
-	r9 - PRG bank 1
-	r10 - PRG bank 2
-	r11 - PRG bank 3
-	r9[7:6] - mirroring
-	r10[7:6] - IRQ control
-	r12 - IRQ low
-	r13 - IRQ high
-	*/	
+	reg [1:0] vrc4_irq_prescaler_counter;		
+	// for VRC
+	wire vrc_2b_hi = cpu_addr_in[1] | cpu_addr_in[3] | cpu_addr_in[5] | cpu_addr_in[7];
+	wire vrc_2b_low = cpu_addr_in[0] | cpu_addr_in[2] | cpu_addr_in[4] | cpu_addr_in[6];
 	
 	always @ (negedge m2)
 	begin
@@ -227,6 +165,12 @@ module CoolGirl #	(
 				end
 				
 				// Mapper #228 - Cheetahmen II
+				/*
+				r0[5:0] - CHR bank
+				r1[0] - PRG mode
+				r2[4:0] - PRG bank
+				r3[1:0] - PRG chip... unused by Cheetahmen II
+				*/				
 				if (USE_CHEETAHMEN2 && mapper == 5'b01001)
 				begin
 					r0[5:0] = {cpu_addr_in[3:0], cpu_data_in[1:0]};	// CHR bank
@@ -249,6 +193,13 @@ module CoolGirl #	(
 				end
 				
 				// Mapper #1 - MMC1
+				/*
+				r0 - load register
+				r1 - control
+				r2 - chr0_bank
+				r3 - chr1_bank
+				r4 - prg_bank
+				*/
 				if (mapper[4:2] == 3'b100)
 				begin
 					if (cpu_data_in[7] == 1) // reset
@@ -271,6 +222,13 @@ module CoolGirl #	(
 				end
 
 				// Mapper #4 - MMC3/MMC6
+				/*
+				r8[2:0] - bank_select
+				r8[3] - PRG mode
+				r8[4] - CHR mode
+				r8[5] - mirroring
+				r8[7:6] - RAM protect
+				*/				
 				if (mapper == 5'b10100)
 				begin
 					case ({cpu_addr_in[14:13], cpu_addr_in[0]})
@@ -332,6 +290,19 @@ module CoolGirl #	(
 				end
 				
 				// Mapper #23 - VRC2/4
+				/*
+				r8[4:0] - PRG0 bank 
+				r9[4:0] - PRG1 bank 
+				r0 - CHR0
+				r1 - CHR1
+				r2 - CHR2
+				r3 - CHR3
+				r4 - CHR4
+				r5 - CHR5
+				r6 - CHR6
+				r7 - CHR7
+				r11[2:0] - IRQ control
+				*/								
 				if (USE_VRC2 && mapper == 5'b11000)
 				begin
 					// flags[0] to shift lines
@@ -388,6 +359,25 @@ module CoolGirl #	(
 				end
 
 				// Mapper #69 - Sunsoft FME-7
+				/*
+				r14 - command register
+				r0 - CHR bank 0
+				r1 - CHR bank 1
+				r2 - CHR bank 2
+				r3 - CHR bank 3
+				r4 - CHR bank 4
+				r5 - CHR bank 5
+				r6 - CHR bank 6
+				r7 - CHR bank 7
+				r8 - PRG bank 0
+				r9 - PRG bank 1
+				r10 - PRG bank 2
+				r11 - PRG bank 3
+				r9[7:6] - mirroring
+				r10[7:6] - IRQ control
+				r12 - IRQ low
+				r13 - IRQ high
+				*/				
 				if (USE_SUNSOFT && mapper == 5'b11001)
 				begin
 					if (cpu_addr_in[14:13] == 2'b00) r14[3:0] = cpu_data_in[3:0];
