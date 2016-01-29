@@ -260,7 +260,7 @@ module CoolGirl #	(
 						if (r0[0] == 1)
 						begin
 							case (cpu_addr_in[14:13])
-								2'b00: {r1[4:2], mirroring} = r0[5:1] ^ 2'b10; // $8000- $9FFF
+								2'b00: {r1[4:2], mirroring[1:0]} = r0[5:1] ^ 2'b10; // $8000- $9FFF
 								2'b01: r2[4:0] = r0[5:1]; // $A000- $BFFF
 								2'b10: r3[4:0] = r0[5:1]; // $C000- $DFFF
 								2'b11: r4[4:0] = r0[5:1]; // $E000- $FFFF
@@ -482,21 +482,18 @@ module CoolGirl #	(
 		// Mapper #1 - MMC1
 		if (mapper[4:2] == 3'b100)
 		begin
-			if (romsel == 0) // accessing $8000-$FFFF
-			begin
-				case (r1[3:2])			
-					2'b00,
-					2'b01: cpu_addr_mapped = {ppu_addr_mapped[16], r4[3:1], cpu_addr_in[14:13]}; // 32KB bank mode
-					2'b10: if (cpu_addr_in[14] == 0) // $8000-$BFFF
-							cpu_addr_mapped = {ppu_addr_mapped[16], 4'b0000, cpu_addr_in[13]}; // fixed to the first bank
-						else // $C000-$FFFF
-							cpu_addr_mapped = {ppu_addr_mapped[16], r4[3:0], cpu_addr_in[13]};  // 16KB bank selected
-					2'b11: if (cpu_addr_in[14] == 0) // $8000-$BFFF
-							cpu_addr_mapped = {ppu_addr_mapped[16], r4[3:0], cpu_addr_in[13]};  // 16KB bank selected
-						else // $C000-$FFFF
-							cpu_addr_mapped = {ppu_addr_mapped[16], 4'b1111, cpu_addr_in[13]};	// fixed to the last bank
-				endcase
-			end
+			case (r1[3:2])			
+				2'b00,
+				2'b01: cpu_addr_mapped = {ppu_addr_mapped[16], r4[3:1], cpu_addr_in[14:13]}; // 32KB bank mode
+				2'b10: if (cpu_addr_in[14] == 0) // $8000-$BFFF
+						cpu_addr_mapped = {ppu_addr_mapped[16], 4'b0000, cpu_addr_in[13]}; // fixed to the first bank
+					else // $C000-$FFFF
+						cpu_addr_mapped = {ppu_addr_mapped[16], r4[3:0], cpu_addr_in[13]};  // 16KB bank selected
+				2'b11: if (cpu_addr_in[14] == 0) // $8000-$BFFF
+						cpu_addr_mapped = {ppu_addr_mapped[16], r4[3:0], cpu_addr_in[13]};  // 16KB bank selected
+					else // $C000-$FFFF
+						cpu_addr_mapped = {ppu_addr_mapped[16], 4'b1111, cpu_addr_in[13]};	// fixed to the last bank
+			endcase
 			case (r1[4])
 				0: ppu_addr_mapped = {r2[4:1], ppu_addr_in[12:10]}; // 8KB bank mode
 				1: if (ppu_addr_in[12] == 0) // 4KB bank mode
