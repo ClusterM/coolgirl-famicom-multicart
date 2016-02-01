@@ -1,16 +1,17 @@
-module CoolGirl #	(
+module CoolGirl # (
 		parameter USE_VRC2 = 1,				// mappers #21, #22, #23, #25
-		parameter USE_VRC2a = 1,
+		parameter USE_VRC2a = 1,			// mapper #22
 		parameter USE_VRC4_INTERRUPTS = 1,
 		parameter USE_TAITO = 1,			// mappers #33 & #48
-		parameter USE_TAITO_INTERRUPTS = 0,	// for mapper #48
+		parameter USE_TAITO_INTERRUPTS = 0,	// mapper #48
 		parameter USE_SUNSOFT = 0, 		// mapper #69
 		parameter USE_MAPPER_78 = 0,		// mapper #78
 		parameter USE_COLOR_DREAMS = 0,	// mapper #11
 		parameter USE_GxROM = 0,			// mapper #66
 		parameter USE_CHEETAHMEN2 = 1, 	// mapper #228
-		parameter USE_FIRE_HAWK = 0,		// for Fire Hawk only (mapper #71)
-		parameter USE_TxSROM = 1			// mapper #118
+		parameter USE_FIRE_HAWK = 1,		// for Fire Hawk only (mapper #71)
+		parameter USE_TxSROM = 1,			// mapper #118
+		parameter USE_MAPPER_40 = 0		// mapper #40, SMB2j port
 	)
 	(
 	input	m2,
@@ -126,7 +127,7 @@ module CoolGirl #	(
 						{flags[2:0], mapper[4:0]} = cpu_data_in[7:0];	// some flags, mapper
 					if (cpu_addr_in[2:0] == 3'b111) // $5xx7
 						// some other parameters
-						{lockout, mirroring[1:0], prg_write_enabled, chr_write_enabled, sram_enabled} = {cpu_data_in[7], cpu_data_in[4:0]};
+						{lockout, map_rom_on_6000, mirroring[1:0], prg_write_enabled, chr_write_enabled, sram_enabled} = {cpu_data_in[7], cpu_data_in[5:0]};
 				end
 			end else begin // $8000-$FFFF
 				// Mapper #2 - UxROM
@@ -200,7 +201,7 @@ module CoolGirl #	(
 				r3 - chr1_bank
 				r4 - prg_bank
 				*/
-				if (mapper[4:2] == 3'b100)
+				if (mapper[4:0] == 5'b10000)
 				begin
 					if (cpu_data_in[7] == 1) // reset
 					begin
@@ -219,6 +220,28 @@ module CoolGirl #	(
 							r0[5:0] = 6'b100000;
 						end
 					end					
+				end
+				
+				// Mapper #40 - SMB2j
+				/*
+				r0 - PRG bank at $C000
+				r1[0] - IRQ enabled
+				{r3[4:0],r2[7:0]} - IRQ counter
+				*/
+				if (USE_MAPPER_40 && mapper[4:0] == 5'b10010)
+				begin
+					case (cpu_addr_in[14:13])
+						2'b00: begin  // $8000- $9FFF, disable and acknowledge IRQ
+								irq_cpu_out = 0;
+								r1[0] = 0;
+							end
+						2'b01: begin // $A000- $BFFF
+								r1[0] = 1;
+								r2 = 0;
+								r3 = 0;
+							end
+						2'b11: r0 = cpu_data_in; // $E000- $FFFF, 8 KiB bank mapped at $C000
+					endcase
 				end
 
 				// Mapper #4 - MMC3/MMC6
@@ -440,13 +463,24 @@ module CoolGirl #	(
 				end
 			end
 		end
-		
+
 		// IRQ for Sunsoft FME-7
 		if (USE_SUNSOFT && mapper == 5'b11001 && r10[7])
 		begin
 			if ({r13, r12} == 0 && r10[6]) irq_cpu_out = 1;
 			{r13, r12} = {r13, r12} - 1;
 		end
+
+		// IRQ for mapper #40 - SMB2j
+		if (USE_MAPPER_40 && mapper[4:0] == 5'b10010)
+		begin
+			map_rom_on_6000 = 1;
+			if (r1[0])
+			begin
+				{r3[4:0],r2[7:0]} = {r3[4:0],r2[7:0]} + 1;
+				irq_cpu_out = r3[4];
+			end
+		end				
 	end
 
 	always @ (*)
@@ -470,7 +504,7 @@ module CoolGirl #	(
 			ppu_ciram_a10 = !mirroring[1] ? (!mirroring[0] ? ppu_addr_in[10] : ppu_addr_in[11]) : mirroring[0]; // vertical / horizontal, 1Sa, 1Sb			
 		end
 		// Mapper #1 - MMC1
-		if (mapper[4:2] == 3'b100)
+		if (mapper[4:0] == 5'b10000)
 		begin
 			case (r1[3:2])			
 				2'b00,
@@ -493,7 +527,22 @@ module CoolGirl #	(
 			endcase		
 			// mirroring
 			ppu_ciram_a10 = !mirroring[1] ? (!mirroring[0] ? ppu_addr_in[10] : ppu_addr_in[11]) : mirroring[0]; // vertical / horizontal, 1Sa, 1Sb			
-		end		
+		end
+	
+		// Mapper #40 - SMB2j
+		if (USE_MAPPER_40 && mapper[4:0] == 5'b10010)
+		begin
+			case ({~romsel, cpu_addr_in[14:13]})
+				3'b011: cpu_addr_mapped = 6; // $6000 - $7FFF
+				3'b100: cpu_addr_mapped = 4; // $8000 - $9FFF
+				3'b101: cpu_addr_mapped = 5; // $A000 - $BFFF
+				3'b110: cpu_addr_mapped = r0; // $C000 - $DFFF
+				3'b111: cpu_addr_mapped = 7; // $E000 - $FFFF
+			endcase
+			ppu_addr_mapped = {r0[4:0], ppu_addr_in[12:10]};
+			// mirroring
+			ppu_ciram_a10 = !mirroring[1] ? (!mirroring[0] ? ppu_addr_in[10] : ppu_addr_in[11]) : mirroring[0]; // vertical / horizontal, 1Sa, 1Sb			
+		end	
 		
 		// MMC3 based mappers
 		// Mapper #4 - MMC3/MMC6 (00100)
