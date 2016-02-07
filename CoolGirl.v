@@ -2,16 +2,17 @@ module CoolGirl # (
 		parameter USE_VRC2 = 1,				// mappers #21, #22, #23, #25
 		parameter USE_VRC2a = 1,			// mapper #22
 		parameter USE_VRC4_INTERRUPTS = 1,
-		parameter USE_TAITO = 1,			// mappers #33 & #48
+		parameter USE_TAITO = 0,			// mappers #33 & #48
 		parameter USE_TAITO_INTERRUPTS = 0,	// mapper #48
 		parameter USE_SUNSOFT = 0, 		// mapper #69
 		parameter USE_MAPPER_78 = 0,		// mapper #78
 		parameter USE_COLOR_DREAMS = 0,	// mapper #11
 		parameter USE_GxROM = 0,			// mapper #66
-		parameter USE_CHEETAHMEN2 = 1, 	// mapper #228
-		parameter USE_FIRE_HAWK = 1,		// for Fire Hawk only (mapper #71)
-		parameter USE_TxSROM = 1,			// mapper #118
-		parameter USE_MAPPER_40 = 0		// mapper #40, SMB2j port
+		parameter USE_CHEETAHMEN2 = 0, 	// mapper #228
+		parameter USE_FIRE_HAWK = 0,		// for Fire Hawk only (mapper #71)
+		parameter USE_TxSROM = 0,			// mapper #118
+		parameter USE_MAPPER_40 = 0,		// mapper #40, SMB2j port
+		parameter USE_IREM_G101 = 1		// mapper #32
 	)
 	(
 	input	m2,
@@ -429,6 +430,28 @@ module CoolGirl # (
 						endcase
 					end						
 				end
+				
+				// Mapper #32 - IREM G-101
+				if (USE_IREM_G101 && mapper == 5'b11010)
+				begin
+					case (cpu_addr_in[13:12])
+						2'b00: r8 = cpu_data_in; // PRG0
+						2'b01: {r10[0], mirroring} = {cpu_data_in[1], 1'b0, cpu_data_in[0]}; // PRG mode, mirroring
+						2'b10: r9 = cpu_data_in; // PRG1
+						2'b11: begin
+							case (cpu_addr_in[2:0]) // CHR regs
+								3'b000: r0 = cpu_data_in;
+								3'b001: r1 = cpu_data_in;
+								3'b010: r2 = cpu_data_in;
+								3'b011: r3 = cpu_data_in;
+								3'b100: r4 = cpu_data_in;
+								3'b101: r5 = cpu_data_in;
+								3'b110: r6 = cpu_data_in;
+								3'b111: r7 = cpu_data_in;
+							endcase
+						end
+					endcase
+				end
 			end // romsel
 		end // write
 		
@@ -583,7 +606,7 @@ module CoolGirl # (
 		end
 	
 		// PPU 8*0x400 mappers
-		if ((USE_VRC2 || USE_SUNSOFT) && mapper[4:2] == 3'b110)
+		if ((USE_VRC2 || USE_SUNSOFT || USE_IREM_G101) && mapper[4:2] == 3'b110)
 		begin
 			// Mapper #23 - VRC2b
 			if (USE_VRC2 && mapper[1:0] == 2'b00)
@@ -600,6 +623,17 @@ module CoolGirl # (
 					3'b101: cpu_addr_mapped = r10[5:0]; // $A000 - $BFFF
 					3'b110: cpu_addr_mapped = r11[5:0]; // $C000 - $DFFF
 					3'b111: cpu_addr_mapped = 6'b111111; // $E000 - $FFFF
+				endcase
+			end
+			
+			// Mapper #32 - IREM G-101
+			if (USE_IREM_G101 && mapper[1:0] == 2'b10)
+			begin
+				case ({cpu_addr_in[14] ^ (r10[0] & ~cpu_addr_in[13]), cpu_addr_in[13]})
+					2'b00: cpu_addr_mapped = r8;
+					2'b01: cpu_addr_mapped = r9;
+					2'b10: cpu_addr_mapped = 6'b111110;
+					2'b11: cpu_addr_mapped = 6'b111111;
 				endcase
 			end
 			
