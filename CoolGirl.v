@@ -1,10 +1,10 @@
 module CoolGirl # (
-		parameter USE_VRC2 = 1,				// mappers #21, #22, #23, #25
-		parameter USE_VRC2a = 1,			// mapper #22
+		parameter USE_VRC2 = 0,				// mappers #21, #22, #23, #25
+		parameter USE_VRC2a = 0,			// mapper #22
 		parameter USE_VRC4_INTERRUPTS = 1,
-		parameter USE_TAITO = 0,			// mappers #33 & #48
+		parameter USE_TAITO = 1,			// mappers #33 & #48
 		parameter USE_TAITO_INTERRUPTS = 0,	// mapper #48
-		parameter USE_SUNSOFT = 0, 		// mapper #69
+		parameter USE_SUNSOFT = 1, 		// mapper #69
 		parameter USE_MAPPER_78 = 0,		// mapper #78
 		parameter USE_COLOR_DREAMS = 0,	// mapper #11
 		parameter USE_GxROM = 0,			// mapper #66
@@ -12,7 +12,9 @@ module CoolGirl # (
 		parameter USE_FIRE_HAWK = 0,		// for Fire Hawk only (mapper #71)
 		parameter USE_TxSROM = 0,			// mapper #118
 		parameter USE_MAPPER_40 = 0,		// mapper #40, SMB2j port
-		parameter USE_IREM_G101 = 1		// mapper #32
+		parameter USE_IREM_TAMS1 = 0,		// mapper #97
+		parameter USE_IREM_G101 = 1,		// mapper #32
+		parameter USE_MAPPER_87 = 1		// mapper #87
 	)
 	(
 	input	m2,
@@ -38,38 +40,38 @@ module CoolGirl # (
 		
 	output irq
 );
-	reg [26:14] cpu_base;
-	reg [18:14] cpu_mask;
-	reg [17:13] chr_mask;
-	reg [1:0] sram_page;
-	reg [4:0] mapper;
-	reg [2:0] flags;
-	reg sram_enabled;
-	reg chr_write_enabled;
-	reg prg_write_enabled;
-	reg [1:0] mirroring;
-	reg map_rom_on_6000;
-	reg lockout;
+	reg [26:14] cpu_base = 0;
+	reg [18:14] cpu_mask = 0;
+	reg [17:13] chr_mask = 0;
+	reg [1:0] sram_page = 0;
+	reg [4:0] mapper = 0;
+	reg [2:0] flags = 0;
+	reg sram_enabled = 0;
+	reg chr_write_enabled = 0;
+	reg prg_write_enabled = 0;
+	reg [1:0] mirroring = 0;
+	reg map_rom_on_6000 = 0;
+	reg lockout = 0;
 
-	reg [18:13] cpu_addr_mapped;
-	reg [17:10] ppu_addr_mapped;
+	reg [18:13] cpu_addr_mapped = 0;
+	reg [17:10] ppu_addr_mapped = 0;
 	
 	// some common registers for all mappers
-	reg [7:0] r0;
-	reg [7:0] r1;
-	reg [7:0] r2;
-	reg [7:0] r3;
-	reg [7:0] r4;
-	reg [7:0] r5;
-	reg [7:0] r6;
-	reg [7:0] r7;
-	reg [7:0] r8;
-	reg [7:0] r9;
-	reg [7:0] r10;
-	reg [7:0] r11;
-	reg [7:0] r12;
-	reg [7:0] r13;
-	reg [7:0] r14;
+	reg [7:0] r0 = 0;
+	reg [7:0] r1 = 0;
+	reg [7:0] r2 = 0;
+	reg [7:0] r3 = 0;
+	reg [7:0] r4 = 0;
+	reg [7:0] r5 = 0;
+	reg [7:0] r6 = 0;
+	reg [7:0] r7 = 0;
+	reg [7:0] r8 = 0;
+	reg [7:0] r9 = 0;
+	reg [7:0] r10 = 0;
+	reg [7:0] r11 = 0;
+	reg [7:0] r12 = 0;
+	reg [7:0] r13 = 0;
+	reg [7:0] r14 = 0;
 
 	assign cpu_addr_out[26:13] = ((romsel == 0) || (cpu_addr_in[14] & cpu_addr_in[13] & m2 & map_rom_on_6000)) ? // when ROMSEL is low of $6000-$7FFF accessed with map_rom_on_6000 on
 		{cpu_base[26:14] | (cpu_addr_mapped[18:14] & ~cpu_mask[18:14]), cpu_addr_mapped[13]} : sram_page[1:0];
@@ -128,7 +130,16 @@ module CoolGirl # (
 						{flags[2:0], mapper[4:0]} = cpu_data_in[7:0];	// some flags, mapper
 					if (cpu_addr_in[2:0] == 3'b111) // $5xx7
 						// some other parameters
-						{lockout, map_rom_on_6000, mirroring[1:0], prg_write_enabled, chr_write_enabled, sram_enabled} = {cpu_data_in[7], cpu_data_in[5:0]};
+						{lockout, mirroring[1:0], prg_write_enabled, chr_write_enabled, sram_enabled} = {cpu_data_in[7], cpu_data_in[4:0]};
+				end
+				
+				// Mapper #87
+				if (USE_MAPPER_87 && mapper == 5'b01100)
+				begin
+					if (cpu_addr_in[14] & cpu_addr_in[13]) // $6000-$7FFF
+					begin
+						r0 = {cpu_data_in[0], cpu_data_in[1]};
+					end
 				end
 			end else begin // $8000-$FFFF
 				// Mapper #2 - UxROM
@@ -157,6 +168,13 @@ module CoolGirl # (
 					r0 = cpu_data_in[7:4];
 					r1 = cpu_data_in[2:0];
 					mirroring = {1'b0, ~cpu_data_in[3]};
+				end
+
+				// Mapper #97 - Irem's TAM-S1
+				if (USE_IREM_TAMS1 && mapper == 5'b00100)
+				begin
+					r1 = cpu_data_in[3:0];
+					mirroring = cpu_data_in[7:6] ^ {~cpu_data_in[6], 1'b0};
 				end
 				
 				// Mapper #7 - AxROM
@@ -219,8 +237,15 @@ module CoolGirl # (
 								2'b11: r4[4:0] = r0[5:1]; // $E000- $FFFF
 							endcase
 							r0[5:0] = 6'b100000;
+							if (flags[0]) // 16KB of WRAM
+							begin
+								if (r1[4])
+									sram_page = {1'b1, ~r2[4]}; // page #2 is battery backed
+								else
+									sram_page = {1'b1, ~r2[3]}; // wtf? ripped off from fce ultra source code and it works
+							end
 						end
-					end					
+					end
 				end
 				
 				// Mapper #40 - SMB2j
@@ -514,7 +539,7 @@ module CoolGirl # (
 			// r0[4:0] - 4k CHR bank
 			// r1 - PRG bank
 			begin
-				cpu_addr_mapped = {(cpu_addr_in[14] ? 5'b11111 : r1[4:0]), cpu_addr_in[13]};
+				cpu_addr_mapped = {(cpu_addr_in[14] ^ (flags[0] & (USE_IREM_TAMS1)) ? 5'b11111 : r1[4:0]), cpu_addr_in[13]};
 			end
 			if (mapper[3] == 1'b1) // AxROM-like (1*0x8000 + 1*0x2000): NROM, AxROM, Cheetahmen, Color Dreams, GxROM, etc.
 			// r0[4:0] - 8k CHR bank
