@@ -1,20 +1,22 @@
 module CoolGirl # (
-		parameter USE_VRC2 = 0,				// mappers #21, #22, #23, #25
-		parameter USE_VRC2a = 0,			// mapper #22
+		parameter USE_VRC2 = 1,				// mappers #21, #22, #23, #25
+		parameter USE_VRC2a = 1,			// mapper #22
 		parameter USE_VRC4_INTERRUPTS = 1,
 		parameter USE_TAITO = 1,			// mappers #33 & #48
 		parameter USE_TAITO_INTERRUPTS = 0,	// mapper #48
-		parameter USE_SUNSOFT = 1, 		// mapper #69
+		parameter USE_SUNSOFT = 0, 		// mapper #69
 		parameter USE_MAPPER_78 = 0,		// mapper #78
 		parameter USE_COLOR_DREAMS = 0,	// mapper #11
 		parameter USE_GxROM = 0,			// mapper #66
-		parameter USE_CHEETAHMEN2 = 0, 	// mapper #228
-		parameter USE_FIRE_HAWK = 0,		// for Fire Hawk only (mapper #71)
-		parameter USE_TxSROM = 0,			// mapper #118
+		parameter USE_CHEETAHMEN2 = 1, 	// mapper #228
+		parameter USE_FIRE_HAWK = 1,		// for Fire Hawk only (mapper #71)
+		parameter USE_TxSROM = 1,			// mapper #118
 		parameter USE_MAPPER_40 = 0,		// mapper #40, SMB2j port
 		parameter USE_IREM_TAMS1 = 0,		// mapper #97
-		parameter USE_IREM_G101 = 1,		// mapper #32
-		parameter USE_MAPPER_87 = 1		// mapper #87
+		parameter USE_IREM_G101 = 0,		// mapper #32
+		parameter USE_MAPPER_87 = 0,		// mapper #87
+		parameter USE_MMC2 = 0,				// mapper #9
+		parameter USE_MMC4 = 0				// mapper #10
 	)
 	(
 	input	m2,
@@ -93,11 +95,11 @@ module CoolGirl # (
 	reg irq_scanline_reload;
 	reg [7:0] irq_scanline_latch;
 	reg irq_scanline_reload_clear;
-	reg irq_scanline_enabled;
+	reg irq_scanline_enabled = 0;
 	reg irq_scanline_value;
 	reg irq_scanline_ready;	
 	reg irq_scanline_out;
-	reg irq_cpu_out;		
+	reg irq_cpu_out = 0;		
 	reg [7:0] vrc4_irq_latch;
 	reg [7:0] vrc4_irq_value;
 	reg [6:0] vrc4_irq_prescaler;
@@ -105,11 +107,22 @@ module CoolGirl # (
 	// for VRC
 	wire vrc_2b_hi = cpu_addr_in[1] | cpu_addr_in[3] | cpu_addr_in[5] | cpu_addr_in[7];
 	wire vrc_2b_low = cpu_addr_in[0] | cpu_addr_in[2] | cpu_addr_in[4] | cpu_addr_in[6];
+	// for MMC2/MMC4
+	reg ppu_latch0;
+	reg ppu_latch1;
+	
+	reg writed;
 	
 	always @ (negedge m2)
 	begin
-		if (cpu_rw_in == 0) // write
+		if (cpu_rw_in == 1) // read
 		begin
+			writed = 0;
+		// block two writes in a row (RMW) for games like Snow Bros. and Bill & Ted's Excellent Adventure
+		// also you can remove this check and just patch those games, lol
+		end else if (cpu_rw_in == 0 && !writed) // write
+		begin
+			writed = 1;
 			if (romsel == 1) // $0000-$7FFF
 			begin
 				if ((cpu_addr_in[14:12] == 3'b101) && (lockout == 0)) // $5000-5FFF & lockout is off
@@ -248,6 +261,26 @@ module CoolGirl # (
 					end
 				end
 				
+				// Mapper #9 and #10 - MMC2 and MMC4
+				/*
+				r0 - PRG
+				r1 - CHR ROM $FD/0000
+				r2 - CHR ROM $FE/0000
+				r3 - CHR ROM $FD/1000
+				r4 - CHR ROM $FE/1000
+				*/
+				if ((USE_MMC2 || USE_MMC4) && mapper[4:0] == 5'b10001)
+				begin
+					case (cpu_addr_in[14:12])
+						3'b010: r0[3:0] = cpu_data_in[3:0]; // $A000-$AFFF
+						3'b011: r1[4:0] = cpu_data_in[4:0]; // $B000-$BFFF
+						3'b100: r2[4:0] = cpu_data_in[4:0]; // $C000-$CFFF
+						3'b101: r3[4:0] = cpu_data_in[4:0]; // $D000-$DFFF
+						3'b110: r4[4:0] = cpu_data_in[4:0]; // $E000-$EFFF
+						3'b111: mirroring = {1'b0, cpu_data_in[0]}; // $F000-$FFFF
+					endcase
+				end
+
 				// Mapper #40 - SMB2j
 				/*
 				r0 - PRG bank at $C000
@@ -303,7 +336,7 @@ module CoolGirl # (
 					endcase					
 				end
 
-				// Mapper #33 + #48 - Taito
+				// Mappers #33 + #48 - Taito
 				if (USE_TAITO && (mapper[4:1] == 5'b1011))
 				begin
 					r8[3] = 0;
@@ -539,7 +572,7 @@ module CoolGirl # (
 			// r0[4:0] - 4k CHR bank
 			// r1 - PRG bank
 			begin
-				cpu_addr_mapped = {(cpu_addr_in[14] ^ (flags[0] & (USE_IREM_TAMS1)) ? 5'b11111 : r1[4:0]), cpu_addr_in[13]};
+				cpu_addr_mapped = {(cpu_addr_in[14] ^ (flags[1] & (USE_IREM_TAMS1)) ? 5'b11111 : r1[4:0]), cpu_addr_in[13]};
 			end
 			if (mapper[3] == 1'b1) // AxROM-like (1*0x8000 + 1*0x2000): NROM, AxROM, Cheetahmen, Color Dreams, GxROM, etc.
 			// r0[4:0] - 8k CHR bank
@@ -573,6 +606,29 @@ module CoolGirl # (
 					else
 						ppu_addr_mapped = {r3[4:0], ppu_addr_in[11:10]}; // second bank
 			endcase		
+			// mirroring
+			ppu_ciram_a10 = !mirroring[1] ? (!mirroring[0] ? ppu_addr_in[10] : ppu_addr_in[11]) : mirroring[0]; // vertical / horizontal, 1Sa, 1Sb			
+		end
+		
+		// Mappers #9 and #10 - MMC2 and MMC4
+		if ((USE_MMC2 || USE_MMC4) && mapper[4:0] == 5'b10001)			
+		begin
+			if ((!USE_MMC4 || !flags[0]) && USE_MMC2)
+			begin // MMC2
+				case (cpu_addr_in[14:13])			
+					2'b00: cpu_addr_mapped = r0[3:0];
+					2'b01: cpu_addr_mapped = 4'b1101;	// fixed to last banks
+					2'b10: cpu_addr_mapped = 4'b1110;	// fixed to last banks
+					2'b11: cpu_addr_mapped = 4'b1111;	// fixed to last banks
+				endcase
+			end else begin // MMC4
+				// like UNROM
+				cpu_addr_mapped = {cpu_addr_in[14] ? 4'b1111 : r0[3:0], cpu_addr_in[13]};
+			end
+			case (ppu_addr_in[12])
+				1'b0: ppu_addr_mapped = {!ppu_latch0 ? r1[4:0] : r2[4:0], ppu_addr_in[11:10]};
+				1'b1: ppu_addr_mapped = {!ppu_latch1 ? r3[4:0] : r4[4:0], ppu_addr_in[11:10]};
+			endcase				
 			// mirroring
 			ppu_ciram_a10 = !mirroring[1] ? (!mirroring[0] ? ppu_addr_in[10] : ppu_addr_in[11]) : mirroring[0]; // vertical / horizontal, 1Sa, 1Sb			
 		end
@@ -731,6 +787,18 @@ module CoolGirl # (
 			a12_low_time = 0;
 		else if (a12_low_time < 3)
 			a12_low_time = a12_low_time + 1;
+	end
+	
+	// for MMC2/MMC4
+	always @ (negedge ppu_rd_in)
+	begin
+		if (USE_MMC2 || USE_MMC4)
+		begin
+			if (ppu_addr_in[13:3] == 11'b00111111011) ppu_latch0 = 0;
+			if (ppu_addr_in[13:3] == 11'b00111111101) ppu_latch0 = 1;
+			if (ppu_addr_in[13:3] == 11'b01111111011) ppu_latch1 = 0;
+			if (ppu_addr_in[13:3] == 11'b01111111101) ppu_latch1 = 1;
+		end
 	end
 	
 endmodule
