@@ -1,5 +1,5 @@
 module CoolGirl # (
-		parameter USE_VRC2 = 1,				// mappers #21, #22, #23, #25
+		parameter USE_VRC2 = 0,				// mappers #21, #22, #23, #25
 		parameter USE_VRC2a = 1,			// mapper #22
 		parameter USE_VRC4_INTERRUPTS = 1,
 		parameter USE_TAITO = 1,			// mappers #33 & #48
@@ -8,10 +8,11 @@ module CoolGirl # (
 		parameter USE_MAPPER_78 = 0,		// mapper #78
 		parameter USE_COLOR_DREAMS = 0,	// mapper #11
 		parameter USE_GxROM = 0,			// mapper #66
-		parameter USE_CHEETAHMEN2 = 1, 	// mapper #228
-		parameter USE_FIRE_HAWK = 1,		// for Fire Hawk only (mapper #71)
-		parameter USE_TxSROM = 1,			// mapper #118
-		parameter USE_MAPPER_40 = 0,		// mapper #40, SMB2j port
+		parameter USE_CHEETAHMEN2 = 0, 	// mapper #228
+		parameter USE_FIRE_HAWK = 0,		// for Fire Hawk only (mapper #71)
+		parameter USE_TxSROM = 0,			// mapper #118
+		parameter USE_MAPPER_40 = 1,		// mapper #40, SMB2j port
+		parameter USE_MAPPER_142 = 1,		// mapper #142, SMB2j port
 		parameter USE_IREM_TAMS1 = 0,		// mapper #97
 		parameter USE_IREM_G101 = 0,		// mapper #32
 		parameter USE_MAPPER_87 = 0,		// mapper #87
@@ -287,7 +288,7 @@ module CoolGirl # (
 				r1[0] - IRQ enabled
 				{r3[4:0],r2[7:0]} - IRQ counter
 				*/
-				if (USE_MAPPER_40 && mapper[4:0] == 5'b10010)
+				if (USE_MAPPER_40 && mapper[4:0] == 5'b10010 && flags[2:0] == 3'b000)
 				begin
 					case (cpu_addr_in[14:13])
 						2'b00: begin  // $8000- $9FFF, disable and acknowledge IRQ
@@ -300,6 +301,39 @@ module CoolGirl # (
 								r3 = 0;
 							end
 						2'b11: r0 = cpu_data_in; // $E000- $FFFF, 8 KiB bank mapped at $C000
+					endcase
+				end
+				
+				// Mapper #142 - another SMB2j port
+				/*
+				r0[2:0] - cmd				
+				r1 - PRG bank at $8000
+				r2 - PRG bank at $A000
+				r3 - PRG bank at $C000
+				r4 - PRG bank at $6000
+				{r6, r5} - IRQ counter
+				r7[0] - IRQ enabled
+				*/
+				if (USE_MAPPER_142 && mapper[4:0] == 5'b10010 && flags[2:0] == 3'b001) // same mapper code but with flag
+				begin
+					case (cpu_addr_in[14:12])
+						3'b000: r5[3:0] = cpu_data_in[3:0];	// $8000
+						3'b001: r5[7:4] = cpu_data_in[3:0];	// $9000
+						3'b010: r6[3:0] = cpu_data_in[3:0];	// $A000
+						3'b011: r6[7:4] = cpu_data_in[3:0];	// $B000
+						3'b100: begin								// $C000
+								irq_cpu_out = 0;	// ack IRQ
+								r7[0] = 1;			// enable IRQ
+							end
+						3'b110: r0[2:0] = cpu_data_in[2:0];	// $E000
+						3'b111: begin								// $F000
+								case (r0[2:0])
+									3'b001: r1 = cpu_data_in;
+									3'b010: r2 = cpu_data_in;
+									3'b011: r3 = cpu_data_in;
+									3'b100: r4 = cpu_data_in;
+								endcase
+							end
 					endcase
 				end
 
@@ -553,7 +587,7 @@ module CoolGirl # (
 		end
 
 		// IRQ for mapper #40 - SMB2j
-		if (USE_MAPPER_40 && mapper[4:0] == 5'b10010)
+		if (USE_MAPPER_40 && mapper[4:0] == 5'b10010 && flags[2:0] == 3'b000)
 		begin
 			map_rom_on_6000 = 1;
 			if (r1[0])
@@ -561,7 +595,22 @@ module CoolGirl # (
 				{r3[4:0],r2[7:0]} = {r3[4:0],r2[7:0]} + 1;
 				irq_cpu_out = r3[4];
 			end
-		end				
+		end
+
+		// IRQ for mapper #142 - another SMB2j port
+		if (USE_MAPPER_142 && mapper[4:0] == 5'b10010 && flags[2:0] == 3'b001) // same mapper code but with flag
+		begin
+			map_rom_on_6000 = 1;
+			if (r7[0]) // IRQ enabled?
+			begin
+				{r6, r5} = {r6, r5} + 1; // counting up
+				if ({r6, r5} == 0) // on overflow
+				begin
+					irq_cpu_out = 1; // fire IRQ
+					r7[0] = 0; // disable IRQ
+				end
+			end
+		end
 	end
 
 	always @ (*)
@@ -634,7 +683,7 @@ module CoolGirl # (
 		end
 	
 		// Mapper #40 - SMB2j
-		if (USE_MAPPER_40 && mapper[4:0] == 5'b10010)
+		if (USE_MAPPER_40 && mapper[4:0] == 5'b10010 && flags[2:0] == 3'b000)
 		begin
 			case ({~romsel, cpu_addr_in[14:13]})
 				3'b011: cpu_addr_mapped = 6; // $6000 - $7FFF
@@ -643,10 +692,25 @@ module CoolGirl # (
 				3'b110: cpu_addr_mapped = r0; // $C000 - $DFFF
 				3'b111: cpu_addr_mapped = 7; // $E000 - $FFFF
 			endcase
-			ppu_addr_mapped = {r0[4:0], ppu_addr_in[12:10]};
+			ppu_addr_mapped = ppu_addr_in[12:10];
 			// mirroring
 			ppu_ciram_a10 = !mirroring[1] ? (!mirroring[0] ? ppu_addr_in[10] : ppu_addr_in[11]) : mirroring[0]; // vertical / horizontal, 1Sa, 1Sb			
-		end	
+		end
+		
+		// Mapper #142 - another SMB2j port
+		if (USE_MAPPER_142 && mapper[4:0] == 5'b10010 && flags[2:0] == 3'b001) // same mapper code but with flag
+		begin
+			case ({~romsel, cpu_addr_in[14:13]})
+				3'b011: cpu_addr_mapped = r4; // $6000 - $7FFF
+				3'b100: cpu_addr_mapped = r1; // $8000 - $9FFF
+				3'b101: cpu_addr_mapped = r2; // $A000 - $BFFF
+				3'b110: cpu_addr_mapped = r3; // $C000 - $DFFF
+				3'b111: cpu_addr_mapped = 6'b111111; // $E000 - $FFFF
+			endcase
+			ppu_addr_mapped = ppu_addr_in[12:10];
+			// mirroring
+			ppu_ciram_a10 = !mirroring[1] ? (!mirroring[0] ? ppu_addr_in[10] : ppu_addr_in[11]) : mirroring[0]; // vertical / horizontal, 1Sa, 1Sb			
+		end
 		
 		// MMC3 based mappers
 		// Mapper #4 - MMC3/MMC6 (00100)
