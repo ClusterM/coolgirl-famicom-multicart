@@ -1,23 +1,24 @@
 module CoolGirl # (
-		parameter USE_VRC2 = 0,				// mappers #21, #22, #23, #25
-		parameter USE_VRC2a = 1,			// mapper #22
-		parameter USE_VRC4_INTERRUPTS = 1,
-		parameter USE_TAITO = 1,			// mappers #33 & #48
+		parameter USE_VRC2 = 0,					// mappers #21, #22, #23, #25
+		parameter USE_VRC2a = 0,				// mapper #22
+		parameter USE_VRC4_INTERRUPTS = 0,	// for VRC4
+		parameter USE_TAITO = 0,				// mappers #33 & #48
 		parameter USE_TAITO_INTERRUPTS = 0,	// mapper #48
-		parameter USE_SUNSOFT = 0, 		// mapper #69
-		parameter USE_MAPPER_78 = 0,		// mapper #78
-		parameter USE_COLOR_DREAMS = 0,	// mapper #11
-		parameter USE_GxROM = 0,			// mapper #66
-		parameter USE_CHEETAHMEN2 = 0, 	// mapper #228
-		parameter USE_FIRE_HAWK = 0,		// for Fire Hawk only (mapper #71)
-		parameter USE_TxSROM = 0,			// mapper #118
-		parameter USE_MAPPER_40 = 1,		// mapper #40, SMB2j port
-		parameter USE_MAPPER_142 = 1,		// mapper #142, SMB2j port
-		parameter USE_IREM_TAMS1 = 0,		// mapper #97
-		parameter USE_IREM_G101 = 0,		// mapper #32
-		parameter USE_MAPPER_87 = 0,		// mapper #87
-		parameter USE_MMC2 = 0,				// mapper #9
-		parameter USE_MMC4 = 0				// mapper #10
+		parameter USE_SUNSOFT = 0, 			// mapper #69
+		parameter USE_MAPPER_78 = 0,			// mapper #78
+		parameter USE_COLOR_DREAMS = 0,		// mapper #11
+		parameter USE_GxROM = 0,				// mapper #66
+		parameter USE_CHEETAHMEN2 = 0, 		// mapper #228
+		parameter USE_FIRE_HAWK = 0,			// for Fire Hawk only (mapper #71)
+		parameter USE_TxSROM = 0,				// mapper #118
+		parameter USE_MAPPER_40 = 0,			// mapper #40, SMB2j port
+		parameter USE_MAPPER_142 = 0,			// mapper #142, Kaiser Pirate (SMB2j port, something else?)
+		parameter USE_IREM_TAMS1 = 0,			// mapper #97
+		parameter USE_IREM_G101 = 0,			// mapper #32
+		parameter USE_MAPPER_87 = 0,			// mapper #87
+		parameter USE_MMC2 = 0,					// mapper #9
+		parameter USE_MMC4 = 0,					// mapper #10
+		parameter USE_MAPPER_093 = 0			// mapper #093
 	)
 	(
 	input	m2,
@@ -191,6 +192,13 @@ module CoolGirl # (
 					mirroring = cpu_data_in[7:6] ^ {~cpu_data_in[6], 1'b0};
 				end
 				
+				// Mapper #93 - Sunsoft-2
+				if (USE_MAPPER_093 && mapper == 5'b00101)
+				begin
+					r1 = cpu_data_in[6:4];
+					chr_write_enabled = cpu_data_in[0];
+				end
+
 				// Mapper #7 - AxROM
 				if (mapper == 5'b01000)
 				begin
@@ -617,7 +625,7 @@ module CoolGirl # (
 	begin
 		if (mapper[4] == 0) // simple mappers
 		begin
-			if (mapper[3] == 1'b0) // UxROM-like (1*0x4000 + 1*0x2000): UxROM, CodeMasters, 78, CNROM
+			if (mapper[3] == 1'b0) // UxROM-like (1*0x4000 + 1*0x4000 fixed + 0x2000 CHR): UxROM, CodeMasters, 78, CNROM
 			// r0[4:0] - 4k CHR bank
 			// r1 - PRG bank
 			begin
