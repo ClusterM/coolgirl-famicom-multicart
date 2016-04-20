@@ -77,8 +77,9 @@ module CoolGirl # (
 	reg [7:0] r13 = 0;
 	reg [7:0] r14 = 0;
 
-	assign cpu_addr_out[26:13] = ((romsel == 0) || (cpu_addr_in[14] & cpu_addr_in[13] & m2 & map_rom_on_6000)) ? // when ROMSEL is low of $6000-$7FFF accessed with map_rom_on_6000 on
-		{cpu_base[26:14] | (cpu_addr_mapped[18:14] & ~cpu_mask[18:14]), cpu_addr_mapped[13]} : sram_page[1:0];
+	assign cpu_addr_out[26:15] = {cpu_base[26:15] | (cpu_addr_mapped[18:15] & ~cpu_mask[18:15])};
+	assign cpu_addr_out[14:13] = (~romsel | ~m2 | ~sram_enabled | (cpu_addr_in[14] & cpu_addr_in[13] & m2 & map_rom_on_6000)) ?
+		{cpu_base[14] | (cpu_addr_mapped[14] & ~cpu_mask[14]), cpu_addr_mapped[13]} : sram_page[1:0];
 	assign ppu_addr_out[17:10] = {ppu_addr_mapped[17:13] & ~chr_mask[17:13], ppu_addr_mapped[12:10]};
 
 	assign flash_we = cpu_rw_in | romsel | ~prg_write_enabled;
