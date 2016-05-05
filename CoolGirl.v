@@ -2,10 +2,10 @@ module CoolGirl # (
 		parameter USE_VRC2 = 0,					// mappers #21, #22, #23, #25
 		parameter USE_VRC2a = 0,				// mapper #22
 		parameter USE_VRC4_INTERRUPTS = 0,	// for VRC4
-		parameter USE_TAITO = 0,				// mappers #33 & #48
+		parameter USE_TAITO = 1,				// mappers #33 & #48
 		parameter USE_TAITO_INTERRUPTS = 0,	// mapper #48
-		parameter USE_SUNSOFT = 0, 			// mapper #69
-		parameter USE_MAPPER_78 = 0,			// mapper #78 - Holy Diver
+		parameter USE_SUNSOFT = 1, 			// mapper #69
+		parameter USE_MAPPER_78 = 1,			// mapper #78 - Holy Diver
 		parameter USE_COLOR_DREAMS = 0,		// mapper #11
 		parameter USE_GxROM = 0,				// mapper #66
 		parameter USE_CHEETAHMEN2 = 0, 		// mapper #228
@@ -78,18 +78,20 @@ module CoolGirl # (
 	reg [7:0] r0 = 0;
 
 	assign cpu_addr_out[26:15] = {cpu_base[26:15] | (cpu_addr_mapped[18:15] & ~cpu_mask[18:15])};
-	assign cpu_addr_out[14:13] = (~romsel | ~m2 | ~sram_enabled | map_rom_on_6000) ?
-		{cpu_base[14] | (cpu_addr_mapped[14] & ~cpu_mask[14]), cpu_addr_mapped[13]} : sram_page[1:0];
+	assign cpu_addr_out[14:13] = (~sram_enabled | map_rom_on_6000 | ~romsel | ~m2) ?
+		{cpu_base[14] | (cpu_addr_mapped[14] & ~cpu_mask[14]), cpu_addr_mapped[13]} 
+		: sram_page[1:0];
 	assign ppu_addr_out[17:10] = {ppu_addr_mapped[17:13] & ~chr_mask[17:13], ppu_addr_mapped[12:10]};
 
 	assign flash_we = cpu_rw_in | romsel | ~prg_write_enabled;
-	assign flash_oe = ~cpu_rw_in | ~(~romsel | (cpu_addr_in[14] & cpu_addr_in[13] & m2 & map_rom_on_6000));
-	assign sram_ce = ~(cpu_addr_in[14] & cpu_addr_in[13] & m2 & romsel & sram_enabled & ~map_rom_on_6000);
-	assign sram_we = cpu_rw_in;
-	assign sram_oe = ~cpu_rw_in;
+	assign flash_oe = ~(cpu_rw_in & m2 & (~romsel | (map_rom_on_6000 & cpu_addr_in[14] & cpu_addr_in[13])));
+	wire sram_ce_w = ~(cpu_addr_in[14] & cpu_addr_in[13] & m2 & romsel & sram_enabled & ~map_rom_on_6000);
+	assign sram_ce = sram_ce_w;
+	assign sram_we = cpu_rw_in | sram_ce_w;
+	assign sram_oe = ~cpu_rw_in | sram_ce_w;
 	assign ppu_rd_out = ppu_rd_in | ppu_addr_in[13];
 	assign ppu_wr_out = ppu_wr_in | ppu_addr_in[13] | ~chr_write_enabled;
-	assign irq = !(irq_scanline_out || irq_cpu_out) ? 1'bZ : 1'b0;
+	assign irq = (irq_scanline_out | irq_cpu_out) ? 1'b0 : 1'bZ;
 	//assign ppu_ciram_ce = 1'bZ; // for backward compatibility	
 
 	// for scanline-based interrupts
@@ -186,6 +188,19 @@ module CoolGirl # (
 		)
 	);	
 	
+	/*
+	reg romsel_alt = 1;
+	reg romsel_alt_clean = 0;
+	
+	always @ (*)
+	begin
+		if (~romsel)
+			romsel_alt = 0;
+		else if (romsel_alt_clean)
+			romsel_alt = 1;
+	end
+	*/
+	
 	always @ (negedge m2)
 	begin
 		if (cpu_rw_in == 1) // read
@@ -196,7 +211,7 @@ module CoolGirl # (
 		end else if (cpu_rw_in == 0 && !writed) // write
 		begin
 			writed = 1;
-			if (romsel == 1) // $0000-$7FFF
+			if (romsel /*& romsel_alt*/) // $0000-$7FFF
 			begin
 				if ((cpu_addr_in[14:12] == 3'b101) && (lockout == 0)) // $5000-5FFF & lockout is off
 				begin
@@ -226,10 +241,11 @@ module CoolGirl # (
 				begin
 					if (cpu_addr_in[14] & cpu_addr_in[13]) // $6000-$7FFF
 					begin
-						chr_bank_a = {cpu_data_in[0], cpu_data_in[1], 3'b000};
+						chr_bank_a[4:3] = {cpu_data_in[0], cpu_data_in[1]};
 					end
 				end
 				// Mapper #189
+				// It's MMC3 with flag1
 				if (USE_MAPPER_189 & flags[1] & (mapper == 5'b10100))
 				begin
 					if (cpu_addr_in[14:0] >= 15'h4120) // $4120-$7FFF
@@ -246,7 +262,7 @@ module CoolGirl # (
 					if (!USE_FIRE_HAWK | ~flags[0] | (cpu_addr_in[14:12] != 3'b001))
 					begin
 						prg_bank_a[5:1] = cpu_data_in[4:0];
-					end else begin // CodeMasters, blah. Mirroring control only used by Fire Hawk
+					end else begin // CodeMasters, blah. Mirroring control used only by Fire Hawk
 						mirroring[1:0] = {1'b1, cpu_data_in[4]};
 					end
 				end
@@ -275,7 +291,7 @@ module CoolGirl # (
 				// Mapper #93 - Sunsoft-2
 				if (USE_MAPPER_093 && mapper == 5'b00101)
 				begin
-					prg_bank_a = {cpu_data_in[6:4], 1'b0};
+					prg_bank_a[3:1] = {cpu_data_in[6:4]};
 					chr_write_enabled = cpu_data_in[0];
 				end
 
@@ -325,7 +341,7 @@ module CoolGirl # (
 						if (r0[0] == 1)
 						begin
 							case (cpu_addr_in[14:13])
-								2'b00: begin
+								2'b00: begin // $8000-$9FFF
 									if (r0[4:3] == 2'b11)
 									begin
 										prg_mode = 3'b000;	// 0x4000 (A) + fixed last (C)
@@ -340,15 +356,18 @@ module CoolGirl # (
 										chr_mode = 3'b100;
 									else
 										chr_mode = 3'b000;
-									mirroring[1:0] = r0[2:1] ^ 2'b10; // $8000-$9FFF
+									mirroring[1:0] = r0[2:1] ^ 2'b10;
 								end
-								2'b01: begin
-									chr_bank_a[6:2] = r0[5:1]; // $A000-$BFFF
+								2'b01: begin // $A000-$BFFF
+									chr_bank_a[6:2] = r0[5:1];
 									prg_bank_a[5] = r0[5]; // for SUROM, 512k PRG support
 									prg_bank_c[5] = r0[5]; // for SUROM, 512k PRG support
 								end
 								2'b10: chr_bank_e[6:2] = r0[5:1]; // $C000-$DFFF
-								2'b11: prg_bank_a[4:1] = r0[4:1]; // $E000-$FFFF
+								2'b11: begin
+									prg_bank_a[4:1] = r0[4:1]; // $E000-$FFFF
+									sram_enabled = ~r0[5];
+								end
 							endcase
 							r0[5:0] = 6'b100000;
 							if (flags[0]) // 16KB of WRAM
@@ -368,10 +387,10 @@ module CoolGirl # (
 				if ((USE_MMC2 | USE_MMC4) && mapper[4:0] == 5'b10001)
 				begin
 					case (cpu_addr_in[14:12])
-						3'b010: if ((USE_MMC2 & ~flags[0]) | !USE_MMC4) // $A000-$AF
+						3'b010: if ((USE_MMC2 & ~flags[0]) | !USE_MMC4) // $A000-$AFFF
 										prg_bank_a[3:0] = cpu_data_in[3:0];
 									else
-										prg_bank_a[4:0] = {cpu_data_in[3:0], 1'b0};							
+										prg_bank_a[4:1] = cpu_data_in[3:0];
 						3'b011: chr_bank_a[6:2] = cpu_data_in[4:0]; // $B000-$BFFF
 						3'b100: chr_bank_b[6:2] = cpu_data_in[4:0]; // $C000-$CFFF
 						3'b101: chr_bank_e[6:2] = cpu_data_in[4:0]; // $D000-$DFFF
@@ -389,8 +408,8 @@ module CoolGirl # (
 				if (mapper == 5'b10100)
 				begin
 					case ({cpu_addr_in[14:13], cpu_addr_in[0]})
-						3'b000: begin
-							r0[2:0] = cpu_data_in[2:0];// $8000-$9FFE, even
+						3'b000: begin // $8000-$9FFE, even
+							r0[2:0] = cpu_data_in[2:0];
 							if (!USE_MAPPER_189 | ~flags[1])
 							begin
 								if (cpu_data_in[6])
@@ -415,7 +434,7 @@ module CoolGirl # (
 								3'b111: if (!USE_MAPPER_189 | ~flags[1]) prg_bank_b[5:0] = cpu_data_in[5:0];
 							endcase
 						end
-						3'b010: mirroring = {1'b0, cpu_data_in[0]};
+						3'b010: mirroring = {1'b0, cpu_data_in[0]}; // $A000-$BFFE, even (mirroring)
 						3'b100: irq_scanline_latch = cpu_data_in; // $C000-$DFFE, even (IRQ latch)
 						3'b101: irq_scanline_reload = 1; // $C001-$DFFF, odd
 						3'b110: irq_scanline_enabled = 0; // $E000-$FFFE, even
@@ -456,6 +475,7 @@ module CoolGirl # (
 						endcase
 					end
 				end
+				
 				// Mapper #23 - VRC2/4
 				/*
 				flag0 - switches A0 and A1 lines. 0=A0,A1 like VRC2b (mapper #23), 1=A1,A0 like VRC2a(#22), VRC2c(#25)
@@ -632,6 +652,13 @@ module CoolGirl # (
 			if ((irq_cpu_value[15:0] == 0) & irq_cpu_control[0]) irq_cpu_out = 1;
 			irq_cpu_value[15:0] = irq_cpu_value[15:0] - 1'b1;
 		end
+		
+		/*
+		if (~romsel_alt)
+			romsel_alt_clean = 1;
+		else
+			romsel_alt_clean = 0;
+		*/
 	end
 
 	// Fire scanline IRQ if counter is zero
