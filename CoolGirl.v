@@ -4,7 +4,7 @@ module CoolGirl # (
 		parameter USE_VRC4_INTERRUPTS = 0,	// for VRC4
 		parameter USE_TAITO = 0,				// mappers #33 & #48
 		parameter USE_TAITO_INTERRUPTS = 0,	// mapper #48
-		parameter USE_SUNSOFT = 1, 			// mapper #69
+		parameter USE_SUNSOFT = 0, 			// mapper #69
 		parameter USE_MAPPER_78 = 0,			// mapper #78 - Holy Diver
 		parameter USE_COLOR_DREAMS = 0,		// mapper #11
 		parameter USE_GxROM = 0,				// mapper #66
