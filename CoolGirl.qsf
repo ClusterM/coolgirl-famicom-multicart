@@ -124,13 +124,11 @@ set_location_assignment PIN_67 -to romsel
 set_location_assignment PIN_76 -to sram_ce
 set_location_assignment PIN_75 -to sram_oe
 set_location_assignment PIN_74 -to sram_we
-set_global_assignment -name VERILOG_FILE CoolGirl.v
 set_global_assignment -name AUTO_RESTART_CONFIGURATION OFF
 set_global_assignment -name ENABLE_DEVICE_WIDE_RESET ON
 set_global_assignment -name USE_CONFIGURATION_DEVICE ON
 set_global_assignment -name VERILOG_INPUT_VERSION SYSTEMVERILOG_2005
 set_global_assignment -name VERILOG_SHOW_LMF_MAPPING_MESSAGES OFF
-set_global_assignment -name CDF_FILE output_files/CoolGirl.cdf
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to romsel
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to cpu_rw_in
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to ppu_rd_in
@@ -141,3 +139,6 @@ set_global_assignment -name ENABLE_CONFIGURATION_PINS OFF
 set_global_assignment -name ENABLE_BOOT_SEL_PIN OFF
 set_global_assignment -name ALLOW_LVTTL_LVCMOS_INPUT_LEVELS_TO_OVERDRIVE_INPUT_BUFFER OFF
 set_global_assignment -name RESERVE_ALL_UNUSED_PINS "AS OUTPUT DRIVING GROUND"
+set_global_assignment -name VERILOG_FILE mappers.v
+set_global_assignment -name VERILOG_FILE CoolGirl.v
+set_global_assignment -name CDF_FILE output_files/CoolGirl.cdf
