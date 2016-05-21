@@ -244,7 +244,7 @@
 								3'b111: if (!USE_MAPPER_189 | ~flags[1]) prg_bank_b[5:0] = cpu_data_in[5:0];
 							endcase
 						end
-						3'b010: mirroring = {1'b0, cpu_data_in[0]}; // $A000-$BFFE, even (mirroring)
+						3'b010: mirroring = cpu_data_in[1:0]; // $A000-$BFFE, even (mirroring)
 						3'b100: irq_scanline_latch = cpu_data_in; // $C000-$DFFE, even (IRQ latch)
 						3'b101: irq_scanline_reload = 1; // $C001-$DFFF, odd
 						3'b110: irq_scanline_enabled = 0; // $E000-$FFFE, even
@@ -258,13 +258,9 @@
 				begin
 					case ({cpu_addr_in[14:13], cpu_addr_in[1:0]})
 						4'b0000: begin
+							prg_bank_a[5:0] = cpu_data_in[5:0]; // $8000, PRG Reg 0 (8k @ $8000)
 							if (~flags[0]) // #33
-							begin
-								prg_bank_a[5:0] = cpu_data_in[5:0]; // $8000, PRG Reg 0 (8k @ $8000)
 								mirroring = cpu_data_in[6];
-							end else begin // #48
-								prg_bank_a[5:0] = cpu_data_in[5:0]; // $8000, PRG Reg 0 (8k @ $8000)
-							end
 						end
 						4'b0001: prg_bank_b[5:0] = cpu_data_in[5:0]; // $8001, PRG Reg 1 (8k @ $A000)
 						4'b0010: chr_bank_a = {cpu_data_in[6:0], 1'b0};  // $8002, CHR Reg 0 (2k @ $0000)
@@ -499,7 +495,6 @@
 	begin
 		if (a12_low_time == 3)
 		begin
-			//irq_scanline_counter_last = irq_scanline_counter;
 			if ((irq_scanline_reload && !irq_scanline_reload_clear) || (irq_scanline_counter == 0))
 			begin
 				irq_scanline_counter = irq_scanline_latch;

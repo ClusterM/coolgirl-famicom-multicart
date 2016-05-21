@@ -1,14 +1,14 @@
 module CoolGirl # (
-		parameter USE_VRC2 = 0,					// mappers #21, #22, #23, #25
+		parameter USE_VRC2 = 1,					// mappers #21, #22, #23, #25
 		parameter USE_VRC2a = 0,				// mapper #22
-		parameter USE_VRC4_INTERRUPTS = 0,	// for VRC4
-		parameter USE_TAITO = 0,				// mappers #33 & #48
-		parameter USE_TAITO_INTERRUPTS = 0,	// mapper #48
+		parameter USE_VRC4_INTERRUPTS = 1,	// for VRC4
+		parameter USE_TAITO = 1,				// mappers #33 & #48
+		parameter USE_TAITO_INTERRUPTS = 1,	// mapper #48
 		parameter USE_SUNSOFT = 0, 			// mapper #69
 		parameter USE_MAPPER_78 = 0,			// mapper #78 - Holy Diver
-		parameter USE_COLOR_DREAMS = 0,		// mapper #11
+		parameter USE_COLOR_DREAMS = 1,		// mapper #11
 		parameter USE_GxROM = 0,				// mapper #66
-		parameter USE_CHEETAHMEN2 = 0, 		// mapper #228
+		parameter USE_CHEETAHMEN2 = 1, 		// mapper #228
 		parameter USE_FIRE_HAWK = 0,			// for Fire Hawk only (mapper #71)
 		parameter USE_TxSROM = 0,				// mapper #118
 		parameter USE_IREM_TAMS1 = 0,			// mapper #97
@@ -142,7 +142,7 @@ module CoolGirl # (
 				{cpu_addr_in[14] ? prg_bank_a[5:1] : prg_bank_c[5:1], cpu_addr_in[13]}
 			) : ( // prg_mode[0]
 				// 0x0 - 0x4000(A) + 0x4000 (С)
-				{cpu_addr_in[14] ? 5'b11111 : prg_bank_a[5:1], cpu_addr_in[13]}
+				{cpu_addr_in[14] ? prg_bank_c[5:1] : prg_bank_a[5:1], cpu_addr_in[13]}
 			)
 		)
 	);
