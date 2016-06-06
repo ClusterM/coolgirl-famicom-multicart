@@ -5,7 +5,7 @@
 	reg map_rom_on_6000 = 0;
 	reg [7:0] prg_bank_6000 = 0;
 	reg [7:0] prg_bank_a = 0;
-	reg [7:0] prg_bank_b = 6'b111101;
+	reg [7:0] prg_bank_b = 1;
 	reg [7:0] prg_bank_c = 6'b111110;
 	reg [7:0] prg_bank_d = 6'b111111;
 	reg [2:0] chr_mode = 0;
@@ -161,26 +161,84 @@
 	);
 	
 	assign irq = (irq_scanline_out | irq_cpu_out) ? 1'b0 : 1'bZ;
-
-	/*
-	reg romsel_alt = 1;
-	reg romsel_alt_clean = 0;
-	
-	always @ (*)
-	begin
-		if (~romsel)
-			romsel_alt = 0;
-		else if (romsel_alt_clean)
-			romsel_alt = 1;
-	end
-	*/
 	
 	// for VRC
 	wire vrc_2b_hi = cpu_addr_in[1] | cpu_addr_in[3] | cpu_addr_in[5] | cpu_addr_in[7];
 	wire vrc_2b_low = cpu_addr_in[0] | cpu_addr_in[2] | cpu_addr_in[4] | cpu_addr_in[6];
 	
 	always @ (negedge m2)
-	begin
+	begin		
+		// IRQ for VRC4
+		if (USE_MAPPER_021_022_023_025 & USE_VRC4_INTERRUPTS & (mapper == 5'b11000) & (irq_cpu_control[1]))
+		begin
+			// Cycle mode without prescaler is not used by any games? It's missed in fceux source code.
+			if (irq_cpu_control[2]) // cycle mode
+			begin
+				irq_cpu_value[7:0] = irq_cpu_value[7:0] + 1'b1; // just count IRQ value
+				if (irq_cpu_value[7:0] == 0)
+				begin
+					irq_cpu_out = 1;
+					irq_cpu_value[7:0] = irq_cpu_latch[7:0];
+				end
+			end else begin // scanline mode
+				vrc4_irq_prescaler = vrc4_irq_prescaler + 1'b1; // count prescaler
+				if ((vrc4_irq_prescaler_counter[1] == 0 && vrc4_irq_prescaler == 114) || (vrc4_irq_prescaler_counter[1] == 1 && vrc4_irq_prescaler == 113)) // 114, 114, 113
+				begin
+					irq_cpu_value[7:0] = irq_cpu_value[7:0] + 1'b1;
+					vrc4_irq_prescaler = 0;
+					vrc4_irq_prescaler_counter = vrc4_irq_prescaler_counter + 1'b1;
+					if (vrc4_irq_prescaler_counter == 2'b11) vrc4_irq_prescaler_counter =  2'b00;
+					if (irq_cpu_value[7:0] == 0)
+					begin
+						irq_cpu_out = 1;
+						irq_cpu_value[7:0] = irq_cpu_latch[7:0];
+					end
+				end
+			end
+		end
+
+		// IRQ for Sunsoft FME-7
+		if (USE_MAPPER_069 & (mapper == 5'b11001) & (irq_cpu_control[1]))
+		begin
+			if ((irq_cpu_value[15:0] == 0) & irq_cpu_control[0]) irq_cpu_out = 1;
+			irq_cpu_value[15:0] = irq_cpu_value[15:0] - 1'b1;
+		end
+		
+		// Mapper #18 - Sunsoft-2
+		if (USE_MAPPER_018 && mapper == 5'b00111)
+		begin
+		// Mapper #65 - Irem's H3001
+			if (irq_cpu_control[0])
+			begin
+				if (irq_cpu_control[3])
+				begin
+					if (irq_cpu_value[3:0] == 0) irq_cpu_out = 1;
+					irq_cpu_value[3:0] = irq_cpu_value[3:0] - 1'b1;
+				end else if (irq_cpu_control[2]) begin
+					if (irq_cpu_value[7:0] == 0) irq_cpu_out = 1;
+					irq_cpu_value[7:0] = irq_cpu_value[7:0] - 1'b1;
+				end else if (irq_cpu_control[1]) begin
+					if (irq_cpu_value[11:0] == 0) irq_cpu_out = 1;
+					irq_cpu_value[11:0] = irq_cpu_value[11:0] - 1'b1;
+				end else begin
+					if (irq_cpu_value[15:0] == 0) irq_cpu_out = 1;
+					irq_cpu_value[15:0] = irq_cpu_value[15:0] - 1'b1;
+				end
+			end
+		end
+		
+		if (USE_MAPPER_065 && mapper == 5'b01110)
+		begin
+			if (irq_cpu_control[0])
+			begin
+				if (irq_cpu_value[15:0] > 0)
+				begin
+					irq_cpu_value[15:0] = irq_cpu_value[15:0] - 1;
+					if (irq_cpu_value[15:0] == 0) irq_cpu_out = 1;
+				end
+			end
+		end		
+		
 		if (cpu_rw_in == 1) // read
 		begin
 			writed = 0;
@@ -189,7 +247,7 @@
 		end else if (cpu_rw_in == 0 && !writed) // write
 		begin
 			writed = 1;
-			if (romsel /*& romsel_alt*/) // $0000-$7FFF
+			if (romsel) // $0000-$7FFF
 			begin
 				if ((cpu_addr_in[14:12] == 3'b101) && (lockout == 0)) // $5000-5FFF & lockout is off
 				begin
@@ -277,7 +335,6 @@
 				
 				
 				// temp/test
-				/*
 				if (mapper == 5'b11111)
 				begin
 					if (cpu_addr_in[14:0] == 15'h4025)
@@ -285,16 +342,13 @@
 						mirroring = {1'b0, cpu_data_in[3]};
 					end
 				end
-				*/
 			end else begin // $8000-$FFFF
 				// temp/test
-				/*
 				if (mapper == 5'b11111)
 				begin
 					prg_bank_6000 = cpu_data_in[4:1] + 4;
 					map_rom_on_6000 = 1;
 				end
-				*/
 				
 				// Mapper #2 - UxROM
 				// flag0 - mapper #71 - for Fire Hawk only.
@@ -417,10 +471,10 @@
 					if (cpu_addr_in[14:12] == 3'b000) // $800x
 					begin
 						case (cpu_addr_in[1:0])
-							2'b00: prg_bank_a = cpu_data_in;
-							2'b01: prg_bank_b = cpu_data_in;
-							2'b10: prg_bank_c = cpu_data_in;
-							2'b11: prg_bank_d = cpu_data_in;
+							2'b00: prg_bank_a[5:0] = cpu_data_in[5:0];
+							2'b01: prg_bank_b[5:0] = cpu_data_in[5:0];
+							2'b10: prg_bank_c[5:0] = cpu_data_in[5:0];
+							2'b11: prg_bank_d[5:0] = cpu_data_in[5:0];
 						endcase
 					end
 					if (cpu_addr_in[14:12] == 3'b001) // $900x
@@ -456,6 +510,35 @@
 						endcase
 					end
 					*/
+				end
+				
+				// Mapper #65 - Irem's H3001
+				if (USE_MAPPER_065 && mapper == 5'b01110)
+				begin
+					case ({cpu_addr_in[14:12], cpu_addr_in[2:0]})
+						6'b000000: prg_bank_a[5:0] = cpu_data_in[5:0]; // $8000
+						6'b001001: mirroring = {1'b0, cpu_data_in[0]}; // $9001, mirroring
+						6'b001011: begin
+								irq_cpu_control[0] = cpu_data_in[7]; // $9003, enable IRQ
+								irq_cpu_out = 0;
+							end
+						6'b001100: begin
+								irq_cpu_value[15:0] = {r0, r1}; // $9004, IRQ reload
+								irq_cpu_out = 0;
+							end
+						6'b001101: r0 = cpu_data_in; // $9005, IRQ high value
+						6'b001110: r1 = cpu_data_in; // $9006, IRQ low value
+						6'b010000: prg_bank_b[5:0] = cpu_data_in[5:0]; // $A000
+						6'b011000: chr_bank_a = cpu_data_in; // $B000
+						6'b011001: chr_bank_b = cpu_data_in; // $B001
+						6'b011010: chr_bank_c = cpu_data_in; // $B002
+						6'b011011: chr_bank_d = cpu_data_in; // $B003
+						6'b011100: chr_bank_e = cpu_data_in; // $B004
+						6'b011101: chr_bank_f = cpu_data_in; // $B005
+						6'b011110: chr_bank_g = cpu_data_in; // $B006
+						6'b011111: chr_bank_h = cpu_data_in; // $B007
+						3'b100000: prg_bank_c[5:0] = cpu_data_in[5:0]; // $C000
+					endcase
 				end
 				
 				// Mapper #1 - MMC1
@@ -568,7 +651,7 @@
 								3'b111: if (!USE_MAPPER_189 | ~flags[1]) prg_bank_b[5:0] = cpu_data_in[5:0];
 							endcase
 						end
-						3'b010: mirroring = cpu_data_in[1:0]; // $A000-$BFFE, even (mirroring)
+						3'b010: mirroring = {1'b0, cpu_data_in[0]}; // $A000-$BFFE, even (mirroring)
 						3'b100: irq_scanline_latch = cpu_data_in; // $C000-$DFFE, even (IRQ latch)
 						3'b101: irq_scanline_reload = 1; // $C001-$DFFF, odd
 						3'b110: irq_scanline_enabled = 0; // $E000-$FFFE, even
@@ -584,7 +667,7 @@
 						4'b0000: begin
 							prg_bank_a[5:0] = cpu_data_in[5:0]; // $8000, PRG Reg 0 (8k @ $8000)
 							if (~flags[0]) // #33
-								mirroring = cpu_data_in[6];
+								mirroring = {1'b0, cpu_data_in[6]};
 						end
 						4'b0001: prg_bank_b[5:0] = cpu_data_in[5:0]; // $8001, PRG Reg 1 (8k @ $A000)
 						4'b0010: chr_bank_a = {cpu_data_in[6:0], 1'b0};  // $8002, CHR Reg 0 (2k @ $0000)
@@ -755,71 +838,6 @@
 		// some IRQ stuff
 		if (irq_scanline_reload_clear)
 			irq_scanline_reload = 0;
-		
-		// IRQ for VRC4
-		if (USE_MAPPER_021_022_023_025 & USE_VRC4_INTERRUPTS & (mapper == 5'b11000) & (irq_cpu_control[1]))
-		begin
-			// Cycle mode without prescaler is not used by any games? It's missed in fceux source code.
-			if (irq_cpu_control[2]) // cycle mode
-			begin
-				irq_cpu_value[7:0] = irq_cpu_value[7:0] + 1'b1; // just count IRQ value
-				if (irq_cpu_value[7:0] == 0)
-				begin
-					irq_cpu_out = 1;
-					irq_cpu_value[7:0] = irq_cpu_latch[7:0];
-				end
-			end else begin // scanline mode
-				vrc4_irq_prescaler = vrc4_irq_prescaler + 1'b1; // count prescaler
-				if ((vrc4_irq_prescaler_counter[1] == 0 && vrc4_irq_prescaler == 114) || (vrc4_irq_prescaler_counter[1] == 1 && vrc4_irq_prescaler == 113)) // 114, 114, 113
-				begin
-					irq_cpu_value[7:0] = irq_cpu_value[7:0] + 1'b1;
-					vrc4_irq_prescaler = 0;
-					vrc4_irq_prescaler_counter = vrc4_irq_prescaler_counter + 1'b1;
-					if (vrc4_irq_prescaler_counter == 2'b11) vrc4_irq_prescaler_counter =  2'b00;
-					if (irq_cpu_value[7:0] == 0)
-					begin
-						irq_cpu_out = 1;
-						irq_cpu_value[7:0] = irq_cpu_latch[7:0];
-					end
-				end
-			end
-		end
-
-		// IRQ for Sunsoft FME-7
-		if (USE_MAPPER_069 & (mapper == 5'b11001) & (irq_cpu_control[1]))
-		begin
-			if ((irq_cpu_value[15:0] == 0) & irq_cpu_control[0]) irq_cpu_out = 1;
-			irq_cpu_value[15:0] = irq_cpu_value[15:0] - 1'b1;
-		end
-		
-		// Mapper #18 - Sunsoft-2
-		if (USE_MAPPER_018 && mapper == 5'b00111)
-		begin
-			if (irq_cpu_control[0])
-			begin
-				if (irq_cpu_control[3])
-				begin
-					if (irq_cpu_value[3:0] == 0) irq_cpu_out = 1;
-					irq_cpu_value[3:0] = irq_cpu_value[3:0] - 1'b1;
-				end else if (irq_cpu_control[2]) begin
-					if (irq_cpu_value[7:0] == 0) irq_cpu_out = 1;
-					irq_cpu_value[7:0] = irq_cpu_value[7:0] - 1'b1;
-				end else if (irq_cpu_control[1]) begin
-					if (irq_cpu_value[11:0] == 0) irq_cpu_out = 1;
-					irq_cpu_value[11:0] = irq_cpu_value[11:0] - 1'b1;
-				end else begin
-					if (irq_cpu_value[15:0] == 0) irq_cpu_out = 1;
-					irq_cpu_value[15:0] = irq_cpu_value[15:0] - 1'b1;
-				end
-			end
-		end
-
-		/*
-		if (~romsel_alt)
-			romsel_alt_clean = 1;
-		else
-			romsel_alt_clean = 0;
-		*/
 	end
 
 	// Fire scanline IRQ if counter is zero
