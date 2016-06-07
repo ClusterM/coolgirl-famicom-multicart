@@ -6,8 +6,8 @@
 	reg [7:0] prg_bank_6000 = 0;
 	reg [7:0] prg_bank_a = 0;
 	reg [7:0] prg_bank_b = 1;
-	reg [7:0] prg_bank_c = 6'b111110;
-	reg [7:0] prg_bank_d = 6'b111111;
+	reg [7:0] prg_bank_c = 8'b11111110;
+	reg [7:0] prg_bank_d = 8'b11111111;
 	reg [2:0] chr_mode = 0;
 	reg [7:0] chr_bank_a = 0;
 	reg [7:0] chr_bank_b = 1;
@@ -34,9 +34,11 @@
 	reg [7:0] r4 = 0;
 	reg [7:0] r5 = 0;
 	
+	/*
 	reg [7:0] mul1;
 	reg [7:0] mul2;
 	wire [15:0] mul = mul1*mul2;
+	*/
 	
 	// for scanline-based interrupts
 	reg [7:0] irq_scanline_counter = 0;
@@ -49,9 +51,10 @@
 	reg irq_scanline_ready = 0;
 	reg irq_scanline_out = 0;
 	reg [7:0] scanline = 0;
-	reg [9:0] ppu_rd_hi_time = 0;
+	reg [3:0] ppu_rd_hi_time = 0;
 	reg new_screen = 0;
 	reg new_screen_clear = 0;
+	reg [1:0] ppu_nt_read_count;
 	
 	// for CPU interrupts
 	reg [15:0] irq_cpu_value = 0;
@@ -233,7 +236,7 @@
 			begin
 				if (irq_cpu_value[15:0] > 0)
 				begin
-					irq_cpu_value[15:0] = irq_cpu_value[15:0] - 1;
+					irq_cpu_value[15:0] = irq_cpu_value[15:0] - 1'b1;
 					if (irq_cpu_value[15:0] == 0) irq_cpu_out = 1;
 				end
 			end
@@ -270,6 +273,9 @@
 							// some other parameters						
 							{lockout, mirroring[1:0], prg_write_enabled, chr_write_enabled, sram_enabled} = {cpu_data_in[7], cpu_data_in[4:0]};
 					endcase
+					
+					if (USE_MAPPER_009_010 && mapper == 5'b10001) prg_bank_b = 8'b11111101;
+					if (USE_MAPPER_065 && mapper == 5'b01110) prg_bank_b = 1;
 				end
 				
 				// Mapper #163				
@@ -335,6 +341,7 @@
 				
 				
 				// temp/test
+				/*
 				if (mapper == 5'b11111)
 				begin
 					if (cpu_addr_in[14:0] == 15'h4025)
@@ -342,13 +349,16 @@
 						mirroring = {1'b0, cpu_data_in[3]};
 					end
 				end
+				*/
 			end else begin // $8000-$FFFF
 				// temp/test
+				/*
 				if (mapper == 5'b11111)
 				begin
 					prg_bank_6000 = cpu_data_in[4:1] + 4;
 					map_rom_on_6000 = 1;
 				end
+				*/
 				
 				// Mapper #2 - UxROM
 				// flag0 - mapper #71 - for Fire Hawk only.
@@ -537,7 +547,7 @@
 						6'b011101: chr_bank_f = cpu_data_in; // $B005
 						6'b011110: chr_bank_g = cpu_data_in; // $B006
 						6'b011111: chr_bank_h = cpu_data_in; // $B007
-						3'b100000: prg_bank_c[5:0] = cpu_data_in[5:0]; // $C000
+						6'b100000: prg_bank_c[5:0] = cpu_data_in[5:0]; // $C000
 					endcase
 				end
 				
@@ -546,7 +556,7 @@
 				r0 - load register
 				flag0 - 16KB of WRAM (SOROM)
 				*/
-				if (mapper[4:0] == 5'b10000)
+				if (mapper == 5'b10000)
 				begin
 					if (cpu_data_in[7] == 1) // reset
 					begin
@@ -601,7 +611,7 @@
 				
 				// Mapper #9 and #10 - MMC2 and MMC4
 				// flag0 - 0=MMC2, 1=MMC4
-				if ((USE_MAPPER_009_010 | USE_MAPPER_009_010) && mapper[4:0] == 5'b10001)
+				if (USE_MAPPER_009_010 && mapper == 5'b10001)
 				begin
 					case (cpu_addr_in[14:12])
 						3'b010: if (~flags[0]) // $A000-$AFFF
@@ -661,7 +671,7 @@
 
 				// Mappers #33 + #48 - Taito
 				// flag0=0 - #33, flag0=1 - #48
-				if (USE_MAPPER_033_048 && (mapper[4:0] == 5'b10110))
+				if (USE_MAPPER_033_048 && (mapper == 5'b10110))
 				begin
 					case ({cpu_addr_in[14:13], cpu_addr_in[1:0]})
 						4'b0000: begin
@@ -871,24 +881,6 @@
 				irq_scanline_value = 0;
 		end
 		if (!irq_scanline_reload) irq_scanline_reload_clear = 0;		
-
-		// Scanline counter for mapper #163
-		if (USE_MAPPER_163)
-		begin
-			if (new_screen & ~new_screen_clear)
-			begin
-				scanline = 0;			
-				new_screen_clear = 1;
-			end else if (a12_low_time >= 3)
-			begin
-				if (~new_screen && new_screen_clear) new_screen_clear = 0;
-				scanline = scanline + 1'b1;
-				if (scanline == 240)
-					ppu_mapper_163_latch = 0;
-				if (scanline == 128)
-					ppu_mapper_163_latch = 1;
-			end
-		end
 	end
 	
 	// A12 must be low for 3 rises of M2
@@ -907,10 +899,33 @@
 		begin
 			ppu_rd_hi_time = 0;
 			if (new_screen_clear) new_screen = 0;
-		end else if (ppu_rd_hi_time < 9'b111111111)
+		end else if (ppu_rd_hi_time < 4'b1111)
 		begin
 			ppu_rd_hi_time = ppu_rd_hi_time + 1'b1;
 		end else new_screen = 1;
+	end	
+	
+	// Scanline counter
+	always @ (negedge ppu_rd_in)
+	begin	
+		if (~new_screen && new_screen_clear) new_screen_clear = 0;
+		if (new_screen & ~new_screen_clear)
+		begin
+			scanline = 0;			
+			new_screen_clear = 1;
+			ppu_mapper_163_latch = 0;
+		end else	
+		if (ppu_addr_in[13:12] == 2'b10)
+		begin
+			if (ppu_nt_read_count < 3)
+			begin
+				ppu_nt_read_count = ppu_nt_read_count + 1'b1;
+			end else begin
+				scanline = scanline + 1'b1;
+				if (scanline == 129)
+					ppu_mapper_163_latch = 1;
+			end
+		end else ppu_nt_read_count = 0;
 	end
 
 	// for MMC2/MMC4
