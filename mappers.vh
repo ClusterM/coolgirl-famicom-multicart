@@ -50,13 +50,19 @@
 	reg irq_scanline_value = 0;
 	reg irq_scanline_ready = 0;
 	reg irq_scanline_out = 0;
+	// for MMC5
+	reg irq_scanline2_enabled = 0;
+	reg [7:0] irq_scanline2_line = 0;
+	reg irq_scanline2_out = 0;
+	reg irq_scanline2_clear = 0;
+	// current scanline counter
 	reg [7:0] scanline = 0;
 	reg [3:0] ppu_rd_hi_time = 0;
 	reg new_screen = 0;
 	reg new_screen_clear = 0;
 	reg [1:0] ppu_nt_read_count;
 	
-	// for CPU interrupts
+	// for CPU-based interrupts
 	reg [15:0] irq_cpu_value = 0;
 	reg irq_cpu_out = 0;
 	reg [3:0] irq_cpu_control = 0;
@@ -81,6 +87,8 @@
 					{1'b1, r2 | r0 | r1 | ~r3} :
 			(USE_MAPPER_163 && (mapper == 5'b00110) && ({cpu_addr_in[14:12],cpu_addr_in[10:8]} == 6'b101101)) ? 
 					{1'b1, r5[0] ? r2 : r1} :
+			(USE_MAPPER_005 && (mapper == 5'b01111) && (cpu_addr_in[14:0] == 15'h5204)) ?
+					{1'b1, irq_scanline2_out, ~new_screen, 6'b000000} :
 			//(USE_MAPPER_090_MUL && (mapper == 5'b01101) && (cpu_addr_in[14:0] == 15'h5800)) ? {1'b1, mul[7:0]} :
 			//(USE_MAPPER_090_MUL && (mapper == 5'b01101) && (cpu_addr_in[14:0] == 15'h5801)) ? {1'b1, mul[15:8]} :
 			9'b000000000
@@ -163,7 +171,7 @@
 		)
 	);
 	
-	assign irq = (irq_scanline_out | irq_cpu_out) ? 1'b0 : 1'bZ;
+	assign irq = (irq_scanline_out | irq_scanline2_out | irq_cpu_out) ? 1'b0 : 1'bZ;
 	
 	// for VRC
 	wire vrc_2b_hi = cpu_addr_in[1] | cpu_addr_in[3] | cpu_addr_in[5] | cpu_addr_in[7];
@@ -339,6 +347,54 @@
 					end
 				end				
 				
+				// MMC5
+				if (USE_MAPPER_005 && mapper == 5'b01111)
+				begin
+					if (cpu_addr_in[14:0] == 15'h5105) // mirroring
+					begin
+						case ({cpu_data_in[4], cpu_data_in[2]})
+							2'b00: mirroring = 2'b10;
+							2'b01: mirroring = 2'b00;
+							2'b10: mirroring = 2'b01;
+							2'b11: mirroring = 2'b11;
+						endcase
+					end
+					if (cpu_addr_in[14:0] == 15'h5115) 
+					begin
+						prg_bank_a[4:0] = {cpu_data_in[4:1], 1'b0};
+						prg_bank_b[4:0] = {cpu_data_in[4:1], 1'b1};
+					end
+					if (cpu_addr_in[14:0] == 15'h5116)
+						prg_bank_c[4:0] = cpu_data_in[4:0];
+					if (cpu_addr_in[14:0] == 15'h5117)
+						prg_bank_d[4:0] = cpu_data_in[4:0];
+					if (cpu_addr_in[14:0] == 15'h5120)
+						chr_bank_a = cpu_data_in;
+					if (cpu_addr_in[14:0] == 15'h5121)
+						chr_bank_b = cpu_data_in;
+					if (cpu_addr_in[14:0] == 15'h5122)
+						chr_bank_c = cpu_data_in;
+					if (cpu_addr_in[14:0] == 15'h5123)
+						chr_bank_d = cpu_data_in;
+					if (cpu_addr_in[14:0] == 15'h5128)
+						chr_bank_e = cpu_data_in;
+					if (cpu_addr_in[14:0] == 15'h5129)
+						chr_bank_f = cpu_data_in;
+					if (cpu_addr_in[14:0] == 15'h512A)
+						chr_bank_g = cpu_data_in;
+					if (cpu_addr_in[14:0] == 15'h512B)
+						chr_bank_h = cpu_data_in;
+					if (cpu_addr_in[14:0] == 15'h5203)
+					begin
+						irq_scanline2_line = cpu_data_in;
+						irq_scanline2_clear = 1;
+					end
+					if (cpu_addr_in[14:0] == 15'h5204)
+					begin
+						irq_scanline2_enabled = cpu_data_in[7];
+						//irq_scanline2_clear = 1;
+					end
+				end	
 				
 				// temp/test
 				/*
@@ -845,9 +901,15 @@
 			end // romsel
 		end // write
 		
+		// for MMC5
+		if (USE_MAPPER_005 && mapper == 5'b01111 && romsel && cpu_addr_in[14:0] == 15'h5204) // write or read
+			irq_scanline2_clear = 1;			
+		
 		// some IRQ stuff
 		if (irq_scanline_reload_clear)
 			irq_scanline_reload = 0;
+		if (irq_scanline2_clear && ~irq_scanline2_out)
+			irq_scanline2_clear = 0;
 	end
 
 	// Fire scanline IRQ if counter is zero
@@ -908,6 +970,7 @@
 	// Scanline counter
 	always @ (negedge ppu_rd_in)
 	begin	
+		if (irq_scanline2_clear) irq_scanline2_out = 0;
 		if (~new_screen && new_screen_clear) new_screen_clear = 0;
 		if (new_screen & ~new_screen_clear)
 		begin
@@ -922,6 +985,8 @@
 				ppu_nt_read_count = ppu_nt_read_count + 1'b1;
 			end else begin
 				scanline = scanline + 1'b1;
+				if (irq_scanline2_enabled && scanline == irq_scanline2_line+1)
+					irq_scanline2_out = 1;
 				if (scanline == 129)
 					ppu_mapper_163_latch = 1;
 			end

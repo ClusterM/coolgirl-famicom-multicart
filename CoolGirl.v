@@ -1,7 +1,8 @@
 module CoolGirl # (
+		parameter USE_MAPPER_005 = 0,					// MMC5 - Castlevania 3 only
 		parameter USE_MAPPER_009_010 = 1,			// mapper #009 - MMC2, #10 - MMC4
 		parameter USE_MAPPER_011 = 1,					// mapper #011 - Color Dreams
-		parameter USE_MAPPER_018 = 0,					// mapper #018
+		parameter USE_MAPPER_018 = 1,					// mapper #018
 		parameter USE_MAPPER_021_022_023_025 = 1,	// mappers #021, #022, #023, #025 - VRC2, VRC4
 		parameter USE_MAPPER_022 = 1,					// mapper #022 - VRC2a (shifted CHR lines)
 		parameter USE_VRC4_INTERRUPTS = 1,			// for VRC4
@@ -18,7 +19,7 @@ module CoolGirl # (
 		parameter USE_MAPPER_093 = 1,					// mapper #093
 		parameter USE_MAPPER_097 = 1,					// mapper #097 - IREM TAMS1
 		parameter USE_MAPPER_118 = 1,					// mapper #118 - TxSROM
-		parameter USE_MAPPER_163 = 1,					// mapper #163
+		parameter USE_MAPPER_163 = 0,					// mapper #163
 		parameter USE_MAPPER_189 = 1,					// mapper #189
 		parameter USE_MAPPER_228 = 1 					// mapper #228 - Cheetahmen II only
 	)
@@ -46,6 +47,7 @@ module CoolGirl # (
 	output ppu_ciram_a10,
 	input ppu_not_a13,
 	output ppu_ciram_ce,
+	output ppu_not_a13out,
 		
 	output irq
 );
