@@ -279,7 +279,7 @@
 							{flags[2:0], mapper[4:0]} = cpu_data_in[7:0];			// some flags, mapper
 						3'b111: // $5xx7														
 							// some other parameters						
-							{lockout, mirroring[1:0], prg_write_enabled, chr_write_enabled, sram_enabled} = {cpu_data_in[7], cpu_data_in[4:0]};
+							{lockout, four_screen, mirroring[1:0], prg_write_enabled, chr_write_enabled, sram_enabled} = {cpu_data_in[7], cpu_data_in[5:0]};
 					endcase
 					
 					if (USE_MAPPER_009_010 && mapper == 5'b10001) prg_bank_b = 8'b11111101;

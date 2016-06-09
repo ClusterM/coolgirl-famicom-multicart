@@ -21,7 +21,9 @@ module CoolGirl # (
 		parameter USE_MAPPER_118 = 1,					// mapper #118 - TxSROM
 		parameter USE_MAPPER_163 = 0,					// mapper #163
 		parameter USE_MAPPER_189 = 1,					// mapper #189
-		parameter USE_MAPPER_228 = 1 					// mapper #228 - Cheetahmen II only
+		parameter USE_MAPPER_228 = 1, 					// mapper #228 - Cheetahmen II only
+		
+		parameter USE_FOUR_SCREEN = 1
 	)
 	(
 	input	m2,
@@ -47,16 +49,17 @@ module CoolGirl # (
 	output ppu_ciram_a10,
 	input ppu_not_a13,
 	output ppu_ciram_ce,
-	output ppu_not_a13out,
+	output ppu_not_a13_out,
 		
 	output irq
 );
-	reg [7:0] new_dendy_init = 8'b11111111;
+	reg [7:0] new_dendy_init = 4'b1111;
 	reg new_dendy = 0;
+	reg four_screen = 0;
 	
 	assign cpu_addr_out[26:13] = {cpu_base[26:14] | (cpu_addr_mapped[20:14] & ~prg_mask[20:14]), cpu_addr_mapped[13]};
 	assign sram_addr_out[14:13] = sram_page[1:0];
-	assign ppu_addr_out[17:10] = {ppu_addr_mapped[17:13] & ~chr_mask[17:13], ppu_addr_mapped[12:10]};
+	assign ppu_addr_out[17:10] = ext_ntram_access ? {6'b111111, ppu_addr_in[11:10]} : {ppu_addr_mapped[17:13] & ~chr_mask[17:13], ppu_addr_mapped[12:10]};
 
 	assign cpu_data_in = cpu_data_out_enabled ? cpu_data_out : 8'bZZZZZZZZ;	
 	wire flash_ce_w = ~(~romsel | (m2 & map_rom_on_6000 & cpu_addr_in[14] & cpu_addr_in[13]));
@@ -69,19 +72,27 @@ module CoolGirl # (
 	assign sram_ce = sram_ce_w;
 	assign sram_we = cpu_rw_in | sram_ce_w;
 	assign sram_oe = ~cpu_rw_in | sram_ce_w | cpu_data_out_enabled;
-	assign ppu_rd_out = ppu_rd_in | ppu_addr_in[13];
-	assign ppu_wr_out = ppu_wr_in | ppu_addr_in[13] | ~chr_write_enabled;
-	assign ppu_ciram_ce = 1'bZ; // ppu_not_a13;
+	assign ppu_rd_out = ppu_rd_in | (ppu_addr_in[13] & ~ext_ntram_access);
+	assign ppu_wr_out = ppu_wr_in | ((ppu_addr_in[13] | ~chr_write_enabled) & ~ext_ntram_access);
+	wire ext_ntram_access = USE_FOUR_SCREEN & four_screen & ppu_addr_in[13] & ~ppu_addr_in[12]; // four-screen and $2000-$2FFF accessed 
+	assign ppu_ciram_ce = new_dendy_init_finished ? 
+			(new_dendy ? 1'bZ : // not used by new famiclones
+			ext_ntram_access ? 1'b1 : // disable internal NTRAM
+			~ppu_addr_in[13]) // enable it otherwise
+			: 1'b0; // ground it while powering on for new famiclones
+	assign ppu_not_a13_out = new_dendy_init_finished ? 1'bZ : 1'b0;  // ground it while powering on for new famiclones
 
+	wire new_dendy_init_finished = new_dendy_init == 0;
+	
 	always @ (posedge m2)
 	begin
-		if (new_dendy_init != 0)
+		if (!new_dendy_init_finished)
 			new_dendy_init = new_dendy_init - 1'b1;
 	end
 	
 	always @ (negedge ppu_rd_in)
 	begin
-		if (new_dendy_init == 0 && (ppu_addr_in[13] != ~ppu_not_a13))
+		if (new_dendy_init_finished && (ppu_addr_in[13] != ~ppu_not_a13))
 			new_dendy = 1;
 	end
 	
