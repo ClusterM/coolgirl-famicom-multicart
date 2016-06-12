@@ -1,8 +1,8 @@
 module CoolGirl # (
-		parameter USE_MAPPER_005 = 0,					// MMC5 - Castlevania 3 only
+		parameter USE_MAPPER_005 = 1,					// MMC5 - Castlevania 3 only
 		parameter USE_MAPPER_009_010 = 1,			// mapper #009 - MMC2, #10 - MMC4
 		parameter USE_MAPPER_011 = 1,					// mapper #011 - Color Dreams
-		parameter USE_MAPPER_018 = 1,					// mapper #018
+		parameter USE_MAPPER_018 = 0,					// mapper #018
 		parameter USE_MAPPER_021_022_023_025 = 1,	// mappers #021, #022, #023, #025 - VRC2, VRC4
 		parameter USE_MAPPER_022 = 1,					// mapper #022 - VRC2a (shifted CHR lines)
 		parameter USE_VRC4_INTERRUPTS = 1,			// for VRC4
@@ -21,7 +21,7 @@ module CoolGirl # (
 		parameter USE_MAPPER_118 = 1,					// mapper #118 - TxSROM
 		parameter USE_MAPPER_163 = 0,					// mapper #163
 		parameter USE_MAPPER_189 = 1,					// mapper #189
-		parameter USE_MAPPER_228 = 1, 					// mapper #228 - Cheetahmen II only
+		parameter USE_MAPPER_228 = 1, 				// mapper #228 - Cheetahmen II only
 		
 		parameter USE_FOUR_SCREEN = 1
 	)
@@ -74,12 +74,12 @@ module CoolGirl # (
 	assign sram_oe = ~cpu_rw_in | sram_ce_w | cpu_data_out_enabled;
 	assign ppu_rd_out = ppu_rd_in | (ppu_addr_in[13] & ~ext_ntram_access);
 	assign ppu_wr_out = ppu_wr_in | ((ppu_addr_in[13] | ~chr_write_enabled) & ~ext_ntram_access);
-	wire ext_ntram_access = USE_FOUR_SCREEN & four_screen & ppu_addr_in[13] & ~ppu_addr_in[12]; // four-screen and $2000-$2FFF accessed 
-	assign ppu_ciram_ce = new_dendy_init_finished ? 
+	wire ext_ntram_access = USE_FOUR_SCREEN && four_screen && ppu_addr_in[13] && ~ppu_addr_in[12]; // four-screen and $2000-$2FFF accessed 
+	assign ppu_ciram_ce = /*1'bZ;*/ new_dendy_init_finished ? 
 			(new_dendy ? 1'bZ : // not used by new famiclones
 			ext_ntram_access ? 1'b1 : // disable internal NTRAM
 			~ppu_addr_in[13]) // enable it otherwise
-			: 1'b0; // ground it while powering on for new famiclones
+			: 1'b0; // ground it while powering on for new famiclones			
 	assign ppu_not_a13_out = new_dendy_init_finished ? 1'bZ : 1'b0;  // ground it while powering on for new famiclones
 
 	wire new_dendy_init_finished = new_dendy_init == 0;

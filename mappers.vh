@@ -350,14 +350,20 @@
 				// MMC5
 				if (USE_MAPPER_005 && mapper == 5'b01111)
 				begin
+					// just workaround for Castlevania 3, not real MMC5
 					if (cpu_addr_in[14:0] == 15'h5105) // mirroring
 					begin
-						case ({cpu_data_in[4], cpu_data_in[2]})
-							2'b00: mirroring = 2'b10;
-							2'b01: mirroring = 2'b00;
-							2'b10: mirroring = 2'b01;
-							2'b11: mirroring = 2'b11;
-						endcase
+						if (cpu_data_in == 8'b11111111)
+							four_screen = 1;
+						else begin
+							four_screen = 0;
+							case ({cpu_data_in[4], cpu_data_in[2]})
+								2'b00: mirroring = 2'b10;
+								2'b01: mirroring = 2'b00;
+								2'b10: mirroring = 2'b01;
+								2'b11: mirroring = 2'b11;
+							endcase
+						end
 					end
 					if (cpu_addr_in[14:0] == 15'h5115) 
 					begin
