@@ -53,7 +53,9 @@ module CoolGirl # (
 		
 	output irq
 );
-	reg [7:0] new_dendy_init = 4'b1111;
+	reg [3:0] new_dendy_init = 4'b1111;
+	reg [1:0] new_dendy_init_a13l = 2'b11;
+	reg [1:0] new_dendy_init_a13h = 2'b11;
 	reg new_dendy = 0;
 	reg four_screen = 0;
 	
@@ -92,8 +94,15 @@ module CoolGirl # (
 	
 	always @ (negedge ppu_rd_in)
 	begin
-		if (new_dendy_init_finished && (ppu_addr_in[13] != ~ppu_not_a13))
-			new_dendy = 1;
+		if (new_dendy_init_finished)
+		begin
+			if ((new_dendy_init_a13l != 0) && 
+				(new_dendy_init_a13h != 0) && 
+				(ppu_addr_in[13] != ~ppu_not_a13))
+					new_dendy = 1;
+			if (~ppu_addr_in[13] && new_dendy_init_a13l != 0) new_dendy_init_a13l = new_dendy_init_a13l - 1'b1;
+			if (ppu_addr_in[13] && new_dendy_init_a13h != 0) new_dendy_init_a13h = new_dendy_init_a13h - 1'b1;
+		end
 	end
 	
 `include "mappers.vh"
