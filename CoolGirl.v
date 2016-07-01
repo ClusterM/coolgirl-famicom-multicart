@@ -56,6 +56,7 @@ module CoolGirl # (
 	reg [3:0] new_dendy_init = 4'b1111;
 	reg [1:0] new_dendy_init_a13l = 2'b11;
 	reg [1:0] new_dendy_init_a13h = 2'b11;
+	wire new_dendy_init_finished = new_dendy_init == 0;
 	reg new_dendy = 0;
 	reg four_screen = 0;
 	
@@ -77,15 +78,13 @@ module CoolGirl # (
 	assign ppu_rd_out = ppu_rd_in | (ppu_addr_in[13] & ~ext_ntram_access);
 	assign ppu_wr_out = ppu_wr_in | ((ppu_addr_in[13] | ~chr_write_enabled) & ~ext_ntram_access);
 	wire ext_ntram_access = USE_FOUR_SCREEN && four_screen && ppu_addr_in[13] && ~ppu_addr_in[12]; // four-screen and $2000-$2FFF accessed 
-	assign ppu_ciram_ce = /*1'bZ;*/ new_dendy_init_finished ? 
+	assign ppu_ciram_ce = new_dendy_init_finished ? 
 			(new_dendy ? 1'bZ : // not used by new famiclones
 			ext_ntram_access ? 1'b1 : // disable internal NTRAM
 			~ppu_addr_in[13]) // enable it otherwise
 			: 1'b0; // ground it while powering on for new famiclones			
 	assign ppu_not_a13_out = new_dendy_init_finished ? 1'bZ : 1'b0;  // ground it while powering on for new famiclones
 
-	wire new_dendy_init_finished = new_dendy_init == 0;
-	
 	always @ (posedge m2)
 	begin
 		if (!new_dendy_init_finished)
