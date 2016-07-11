@@ -589,7 +589,7 @@
 				begin
 					case ({cpu_addr_in[14:12], cpu_addr_in[2:0]})
 						6'b000000: prg_bank_a[5:0] = cpu_data_in[5:0]; // $8000
-						6'b001001: mirroring = {1'b0, cpu_data_in[0]}; // $9001, mirroring
+						6'b001001: mirroring = {1'b0, cpu_data_in[7]}; // $9001, mirroring
 						6'b001011: begin
 								irq_cpu_control[0] = cpu_data_in[7]; // $9003, enable IRQ
 								irq_cpu_out = 0;
