@@ -58,7 +58,6 @@ module CoolGirl # (
 	reg [1:0] new_dendy_init_a13h = 2'b11;
 	wire new_dendy_init_finished = new_dendy_init == 0;
 	reg new_dendy = 0;
-	reg four_screen = 0;
 	
 	assign cpu_addr_out[26:13] = {cpu_base[26:14] | (cpu_addr_mapped[20:14] & ~prg_mask[20:14]), cpu_addr_mapped[13]};
 	assign sram_addr_out[14:13] = sram_page[1:0];

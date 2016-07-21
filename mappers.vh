@@ -24,6 +24,7 @@
 	reg chr_write_enabled = 0;
 	reg prg_write_enabled = 0;
 	reg [1:0] mirroring = 0;
+	reg four_screen = 0;
 	reg lockout = 0;	
 
 	// some common registers for all mappers
