@@ -689,6 +689,14 @@
 					endcase
 				end
 				
+				// Mapper #152
+				if (USE_MAPPER_152 && mapper == 5'b10010)
+				begin
+					chr_bank_a[6:3] = cpu_data_in[3:0];
+					prg_bank_a[3:1] = cpu_data_in[6:4];
+					mirroring = {1'b1, cpu_data_in[7]};
+				end				
+				
 				// Mapper #4 - MMC3/MMC6
 				/*
 				r8[2:0] - bank_select

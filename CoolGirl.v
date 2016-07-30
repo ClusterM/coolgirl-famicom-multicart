@@ -19,6 +19,7 @@ module CoolGirl # (
 		parameter USE_MAPPER_093 = 1,					// mapper #093
 		parameter USE_MAPPER_097 = 1,					// mapper #097 - IREM TAMS1
 		parameter USE_MAPPER_118 = 1,					// mapper #118 - TxSROM
+		parameter USE_MAPPER_152 = 1,					// mapper #152
 		parameter USE_MAPPER_163 = 0,					// mapper #163
 		parameter USE_MAPPER_189 = 1,					// mapper #189
 		parameter USE_MAPPER_228 = 1, 				// mapper #228 - Cheetahmen II only
