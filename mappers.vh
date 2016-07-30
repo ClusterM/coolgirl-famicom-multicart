@@ -208,6 +208,27 @@
 				end
 			end
 		end
+		
+		// IRQ for VRC3
+		if (USE_MAPPER_073 & (mapper == 5'b10011) & (irq_cpu_control[1]))
+		begin
+			if (irq_cpu_control[2])
+			begin // 8-bit mode
+				irq_cpu_value[7:0] = irq_cpu_value[7:0] + 1'b1;
+				if (irq_cpu_value[7:0] == 0)
+				begin
+					irq_cpu_out = 1;
+					irq_cpu_value[7:0] = irq_cpu_latch[7:0];
+				end
+			end else begin // 16-bit mode
+				irq_cpu_value[15:0] = irq_cpu_value[15:0] + 1'b1;
+				if (irq_cpu_value[15:0] == 0)
+				begin
+					irq_cpu_out = 1;
+					irq_cpu_value[15:0] = irq_cpu_latch[15:0];
+				end
+			end
+		end		
 
 		// IRQ for Sunsoft FME-7
 		if (USE_MAPPER_069 & (mapper == 5'b11001) & (irq_cpu_control[1]))
@@ -695,11 +716,34 @@
 					chr_bank_a[6:3] = cpu_data_in[3:0];
 					prg_bank_a[3:1] = cpu_data_in[6:4];
 					mirroring = {1'b1, cpu_data_in[7]};
-				end				
+				end
+		
+				// Mapper #73 - VRC3
+				if (USE_MAPPER_073 && mapper == 5'b10011)
+				begin
+					case (cpu_addr_in[14:12])
+						3'b000: irq_cpu_latch[3:0] = cpu_data_in[3:0]; // $8000-$8FFF
+						3'b001: irq_cpu_latch[7:4] = cpu_data_in[3:0]; // $9000-$9FFF
+						3'b010: irq_cpu_latch[11:8] = cpu_data_in[3:0]; // $A000-$AFFF
+						3'b011: irq_cpu_latch[15:12] = cpu_data_in[3:0]; // $B000-$BFFF
+						3'b100: begin // $C000-$CFFF
+								irq_cpu_out = 0; // ack
+								irq_cpu_control[2:0] = cpu_data_in[2:0]; // mode, enabled, enabled after ack
+								if (irq_cpu_control[1]) // if E is set
+									irq_cpu_value[15:0] = irq_cpu_latch[15:0]; // reload with latch								
+							end
+						3'b101: begin // $D000-$DFFF
+								irq_cpu_out = 0; // ack
+								irq_cpu_control[1] = irq_cpu_control[0];
+							end
+						3'b110: ; // $E000-$EFFF
+						3'b111: prg_bank_a[3:1] = cpu_data_in[2:0]; // $F000-$FFFF
+					endcase
+				end			
 				
 				// Mapper #4 - MMC3/MMC6
 				/*
-				r8[2:0] - bank_select
+				r0[2:0] - internal register
 				flag0 - TxSROM
 				flag1 - mapper #189
 				*/				
@@ -737,6 +781,29 @@
 						3'b101: irq_scanline_reload = 1; // $C001-$DFFF, odd
 						3'b110: irq_scanline_enabled = 0; // $E000-$FFFE, even
 						3'b111: irq_scanline_enabled = 1; // $E001-$FFFF, odd						
+					endcase
+				end
+				
+				// Mapper #112
+				// r0[2:0] - internal register
+				if (USE_MAPPER_112 && (mapper == 5'b10101))
+				begin
+					case (cpu_addr_in[14:13])
+						2'b00: r0[2:0] = cpu_data_in[2:0]; // $8000-$9FFF
+						2'b01: begin // $A000-$BFFF
+							case (r0[2:0])
+								3'b000: prg_bank_a[5:0] = cpu_data_in[5:0];
+								3'b001: prg_bank_b[5:0] = cpu_data_in[5:0];
+								3'b010: chr_bank_a = cpu_data_in;
+								3'b011: chr_bank_c = cpu_data_in;
+								3'b100: chr_bank_e = cpu_data_in;
+								3'b101: chr_bank_f = cpu_data_in;
+								3'b110: chr_bank_g = cpu_data_in;
+								3'b111: chr_bank_h = cpu_data_in;
+							endcase
+						end
+						2'b10: ; // $C000-$DFFF
+						2'b11: mirroring = {1'b0, cpu_data_in[0]}; // $E000-$FFFF
 					endcase
 				end
 

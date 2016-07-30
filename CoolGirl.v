@@ -13,11 +13,13 @@ module CoolGirl # (
 		parameter USE_MAPPER_066 = 1,					// mapper #066 - GxROM
 		parameter USE_MAPPER_069 = 1, 				// mapper #069 - Sunsoft
 		parameter USE_MAPPER_071 = 1,					// mapper #071 (for Fire Hawk only)
+		parameter USE_MAPPER_073 = 1,					// mapper #073 - VRC3
 		parameter USE_MAPPER_078 = 1,					// mapper #078 - Holy Diver
 		parameter USE_MAPPER_087 = 1,					// mapper #087
 		parameter USE_MAPPER_090 = 1,					// mapper #090 - JY, for Aladdin only
 		parameter USE_MAPPER_093 = 1,					// mapper #093
 		parameter USE_MAPPER_097 = 1,					// mapper #097 - IREM TAMS1
+		parameter USE_MAPPER_112 = 0,					// mapper #112
 		parameter USE_MAPPER_118 = 1,					// mapper #118 - TxSROM
 		parameter USE_MAPPER_152 = 1,					// mapper #152
 		parameter USE_MAPPER_163 = 0,					// mapper #163
