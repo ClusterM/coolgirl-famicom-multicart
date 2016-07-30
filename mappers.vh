@@ -240,7 +240,6 @@
 		// Mapper #18 - Sunsoft-2
 		if (USE_MAPPER_018 && mapper == 5'b00111)
 		begin
-		// Mapper #65 - Irem's H3001
 			if (irq_cpu_control[0])
 			begin
 				if (irq_cpu_control[3])
@@ -260,6 +259,7 @@
 			end
 		end
 		
+		// Mapper #65 - Irem's H3001
 		if (USE_MAPPER_065 && mapper == 5'b01110)
 		begin
 			if (irq_cpu_control[0])
