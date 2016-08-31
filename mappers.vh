@@ -586,8 +586,7 @@
 					end
 					if ({cpu_addr_in[14:12], cpu_addr_in[1:0]} == 5'b10101) // $D001
 						mirroring = cpu_data_in[1:0];
-					/*
-					if (USE_MAPPER_090_INTERRUPTS && cpu_addr_in[14:12] == 3'b100) // $C00x
+					if (/*USE_MAPPER_090_INTERRUPTS &&*/ cpu_addr_in[14:12] == 3'b100) // $C00x
 					begin
 						case (cpu_addr_in[2:0])
 							3'b000: irq_scanline_enabled = cpu_data_in[0];
@@ -603,7 +602,6 @@
 							3'b111: ;								
 						endcase
 					end
-					*/
 				end
 				
 				// Mapper #65 - Irem's H3001

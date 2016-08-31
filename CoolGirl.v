@@ -6,14 +6,14 @@ module CoolGirl # (
 		parameter USE_MAPPER_021_022_023_025 = 1,	// mappers #021, #022, #023, #025 - VRC2, VRC4
 		parameter USE_MAPPER_022 = 1,					// mapper #022 - VRC2a (shifted CHR lines)
 		parameter USE_VRC4_INTERRUPTS = 1,			// for VRC4
-		parameter USE_MAPPER_032 = 1,					// mapper #032 - IREM-G101
+		parameter USE_MAPPER_032 = 1,					// mapper #032 - IREM G101
 		parameter USE_MAPPER_033_048 = 1,			// mappers #033 & #048 - Taito
 		parameter USE_MAPPER_048_INTERRUPTS = 1,	// mapper #048 - Taito
 		parameter USE_MAPPER_065 = 1,					// mapper #065 - Irem's H3001
 		parameter USE_MAPPER_066 = 1,					// mapper #066 - GxROM
 		parameter USE_MAPPER_069 = 1, 				// mapper #069 - Sunsoft
 		parameter USE_MAPPER_071 = 1,					// mapper #071 (for Fire Hawk only)
-		parameter USE_MAPPER_073 = 1,					// mapper #073 - VRC3
+		parameter USE_MAPPER_073 = 0,					// mapper #073 - VRC3
 		parameter USE_MAPPER_078 = 1,					// mapper #078 - Holy Diver
 		parameter USE_MAPPER_087 = 1,					// mapper #087
 		parameter USE_MAPPER_090 = 1,					// mapper #090 - JY, for Aladdin only
