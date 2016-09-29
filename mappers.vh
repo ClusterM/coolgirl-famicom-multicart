@@ -530,11 +530,12 @@
 					endcase
 				end
 
-				// Mapper #7 - AxROM
+				// Mapper #7 - AxROM, mapper #241 - BNROM
 				if (mapper == 5'b01000)
 				begin
 					prg_bank_a[5:2] = cpu_data_in[3:0];
-					mirroring = {1'b1, cpu_data_in[4]};
+					if (!USE_MAPPER_241 || !flags[0]) // BNROM?
+						mirroring = {1'b1, cpu_data_in[4]};
 				end
 				
 				// Mapper #228 - Cheetahmen II				

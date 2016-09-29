@@ -25,6 +25,7 @@ module CoolGirl # (
 		parameter USE_MAPPER_163 = 0,					// mapper #163
 		parameter USE_MAPPER_189 = 1,					// mapper #189
 		parameter USE_MAPPER_228 = 1, 				// mapper #228 - Cheetahmen II only
+		parameter USE_MAPPER_241 = 1, 				// mapper #241 - BNROM
 		
 		parameter USE_FOUR_SCREEN = 1
 	)
