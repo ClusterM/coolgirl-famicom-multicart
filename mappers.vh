@@ -237,6 +237,7 @@
 			irq_cpu_value[15:0] = irq_cpu_value[15:0] - 1'b1;
 		end
 		
+		
 		// Mapper #18 - Sunsoft-2
 		if (USE_MAPPER_018 && mapper == 5'b00111)
 		begin
@@ -271,6 +272,13 @@
 				end
 			end
 		end		
+
+		// IRQ for mapper #42
+		if (USE_MAPPER_042 & USE_MAPPER_042_INTERRUPTS & (mapper == 5'b10111) & (irq_cpu_control[0]))
+		begin
+			irq_cpu_value[14:0] = irq_cpu_value[14:0] + 1'b1;
+			irq_cpu_out = irq_cpu_value[14] & irq_cpu_value[13];
+		end
 		
 		if (cpu_rw_in == 1) // read
 		begin
@@ -834,6 +842,24 @@
 							4'b1011: irq_scanline_enabled = 0; // $C003, IRQ disable & ack
 						endcase
 					end
+				end
+				
+				// Mappers #42
+				if (USE_MAPPER_042 && (mapper == 5'b10111))
+				begin
+					map_rom_on_6000 = 1;
+					case ({cpu_addr_in[14], cpu_addr_in[1:0]})
+						3'b000: chr_bank_a[7:3] = cpu_data_in[4:0]; // $8000, CHR Reg (8k @ $8000)
+						3'b100: prg_bank_6000[3:0] = cpu_data_in[3:0]; // $E000, PRG Reg (8k @ $6000)
+						3'b101: mirroring = {1'b0, cpu_data_in[3]}; // Mirroring
+						3'b110: if (USE_MAPPER_042_INTERRUPTS) begin
+									irq_cpu_control[0] = cpu_data_in[1];
+									if (!irq_cpu_control[0]) begin
+										irq_cpu_out = 0;
+										irq_cpu_value = 0;
+									end
+								end
+					endcase
 				end
 				
 				// Mapper #23 - VRC2/4

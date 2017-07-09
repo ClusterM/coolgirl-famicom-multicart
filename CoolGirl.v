@@ -9,6 +9,8 @@ module CoolGirl # (
 		parameter USE_MAPPER_032 = 1,					// mapper #032 - IREM G101
 		parameter USE_MAPPER_033_048 = 1,			// mappers #033 & #048 - Taito
 		parameter USE_MAPPER_048_INTERRUPTS = 1,	// mapper #048 - Taito
+		parameter USE_MAPPER_042 = 1,					// mapper #042
+		parameter USE_MAPPER_042_INTERRUPTS = 1,	// mapper #042 (for Mario Baby only)
 		parameter USE_MAPPER_065 = 1,					// mapper #065 - Irem's H3001
 		parameter USE_MAPPER_066 = 1,					// mapper #066 - GxROM
 		parameter USE_MAPPER_069 = 1, 				// mapper #069 - Sunsoft
@@ -22,7 +24,7 @@ module CoolGirl # (
 		parameter USE_MAPPER_112 = 0,					// mapper #112
 		parameter USE_MAPPER_118 = 1,					// mapper #118 - TxSROM
 		parameter USE_MAPPER_152 = 1,					// mapper #152
-		parameter USE_MAPPER_163 = 0,					// mapper #163
+		parameter USE_MAPPER_163 = 1,					// mapper #163
 		parameter USE_MAPPER_189 = 1,					// mapper #189
 		parameter USE_MAPPER_228 = 1, 				// mapper #228 - Cheetahmen II only
 		parameter USE_MAPPER_241 = 1, 				// mapper #241 - BNROM
