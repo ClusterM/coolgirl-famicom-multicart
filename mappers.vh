@@ -779,8 +779,8 @@
 								3'b011: chr_bank_f = cpu_data_in;
 								3'b100: chr_bank_g = cpu_data_in;
 								3'b101: chr_bank_h = cpu_data_in;
-								3'b110: if (!USE_MAPPER_189 | ~flags[1]) prg_bank_a[5:0] = cpu_data_in[5:0];
-								3'b111: if (!USE_MAPPER_189 | ~flags[1]) prg_bank_b[5:0] = cpu_data_in[5:0];
+								3'b110: if (!USE_MAPPER_189 | ~flags[1]) prg_bank_a[7:0] = cpu_data_in[7:0];
+								3'b111: if (!USE_MAPPER_189 | ~flags[1]) prg_bank_b[7:0] = cpu_data_in[7:0];
 							endcase
 						end
 						3'b010: mirroring = {1'b0, cpu_data_in[0]}; // $A000-$BFFE, even (mirroring)
