@@ -8,7 +8,7 @@ module CoolGirl # (
 		parameter USE_VRC4_INTERRUPTS = 1,			// for VRC4
 		parameter USE_MAPPER_032 = 1,					// mapper #032 - IREM G101
 		parameter USE_MAPPER_033_048 = 1,			// mappers #033 & #048 - Taito
-		parameter USE_MAPPER_048_INTERRUPTS = 1,	// mapper #048 - Taito
+		parameter USE_MAPPER_048_INTERRUPTS = 0,	// mapper #048 - Taito
 		parameter USE_MAPPER_042 = 0,					// mapper #042
 		parameter USE_MAPPER_042_INTERRUPTS = 0,	// mapper #042 (for Mario Baby only)
 		parameter USE_MAPPER_065 = 1,					// mapper #065 - Irem's H3001
