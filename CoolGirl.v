@@ -29,7 +29,8 @@ module CoolGirl # (
 		parameter USE_MAPPER_228 = 1, 				// mapper #228 - Cheetahmen II only
 		parameter USE_MAPPER_241 = 1, 				// mapper #241 - BNROM
 		
-		parameter USE_FOUR_SCREEN = 1
+		parameter USE_FOUR_SCREEN = 1,
+		parameter MMC3_BITSIZE = 8						// Maximum size for MMC3 PRG (6=512KB - standard size, 8=2MB - required for some hacks)
 	)
 	(
 	input	m2,
