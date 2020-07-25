@@ -50,7 +50,7 @@ module CoolGirl # (
 	input ppu_rd_in,
 	input ppu_wr_in,
 	input [13:0] ppu_addr_in,
-	output [17:10] ppu_addr_out,
+	output [18:10] ppu_addr_out,
 	output ppu_rd_out,
 	output ppu_wr_out,
 	output ppu_ciram_a10,
@@ -58,13 +58,17 @@ module CoolGirl # (
 	output ppu_ciram_ce,
 	output ppu_not_a13_out,
 		
-	output irq
+	output irq,
+	
+   output cpu_shifers_oe
 );
 	reg [3:0] new_dendy_init = 4'b1111;
 	reg [1:0] new_dendy_init_a13l = 2'b11;
 	reg [1:0] new_dendy_init_a13h = 2'b11;
 	wire new_dendy_init_finished = new_dendy_init == 0;
 	reg new_dendy = 0;
+	assign cpu_shifers_oe = 1'b0;
+	assign ppu_addr_out[18] = 1'b1; // reserved
 	
 	assign cpu_addr_out[26:13] = {cpu_base[26:14] | (cpu_addr_mapped[20:14] & ~prg_mask[20:14]), cpu_addr_mapped[13]};
 	assign sram_addr_out[14:13] = sram_page[1:0];
@@ -90,7 +94,7 @@ module CoolGirl # (
 			~ppu_addr_in[13] /*1'bZ*/) // enable it otherwise
 			: 1'b0; // ground it while powering on for new famiclones
 	assign ppu_not_a13_out = new_dendy_init_finished ? 1'bZ : 1'b0;  // ground it while powering on for new famiclones
-
+	
 	always @ (posedge m2)
 	begin
 		if (!new_dendy_init_finished)

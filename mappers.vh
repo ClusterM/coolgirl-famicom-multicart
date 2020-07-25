@@ -298,7 +298,7 @@
 						3'b001: // $5xx1
 							cpu_base[21:14] = cpu_data_in[7:0]; 						// CPU base address A21-A14
 						3'b010: // $5xx2
-							prg_mask[20:14] = cpu_data_in[6:0]; 						// CPU mask A18-A14
+							prg_mask[20:14] = cpu_data_in[6:0]; 						// CPU mask A20-A14
 						3'b011: // $5xx3
 							{prg_mode[2:0], chr_bank_a[7:3]} = cpu_data_in[7:0];	// PRG mode, direct chr_bank_a access
 						3'b100: // $5xx4
