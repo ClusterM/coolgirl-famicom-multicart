@@ -67,6 +67,7 @@ module CoolGirl # (
 	reg [1:0] new_dendy_init_a13h = 2'b11;
 	wire new_dendy_init_finished = new_dendy_init == 0;
 	reg new_dendy = 0;
+	assign cpu_shifers_oe = 1'b0;
 	assign ppu_addr_out[18] = 1'b1; // reserved
 	
 	assign cpu_addr_out[26:13] = {cpu_base[26:14] | (cpu_addr_mapped[20:14] & ~prg_mask[20:14]), cpu_addr_mapped[13]};
@@ -77,14 +78,15 @@ module CoolGirl # (
 	wire flash_ce_w = ~(~romsel | (m2 & map_rom_on_6000 & cpu_addr_in[14] & cpu_addr_in[13]));
 	assign flash_ce = flash_ce_w
 		| cpu_data_out_enabled;
-	assign flash_oe = (~cpu_rw_in | flash_ce_w) 
+	assign flash_oe = (~cpu_rw_in | flash_ce_w
+		| sram_oe // for version 3.0 only
+		)
 		& ~cpu_data_out_enabled; // to switch data direction
 	assign flash_we = cpu_rw_in | flash_ce_w | ~prg_write_enabled;
 	wire sram_ce_w = ~(cpu_addr_in[14] & cpu_addr_in[13] & m2 & romsel & sram_enabled & ~map_rom_on_6000);
 	assign sram_ce = sram_ce_w;
 	assign sram_we = cpu_rw_in | sram_ce_w;
 	assign sram_oe = ~cpu_rw_in | sram_ce_w | cpu_data_out_enabled;
-	assign cpu_shifers_oe = ~sram_ce_w;
 	assign ppu_rd_out = ppu_rd_in | (ppu_addr_in[13] & ~ext_ntram_access);
 	assign ppu_wr_out = ppu_wr_in | ((ppu_addr_in[13] | ~chr_write_enabled) & ~ext_ntram_access);
 	wire ext_ntram_access = USE_FOUR_SCREEN && four_screen && ppu_addr_in[13] && ~ppu_addr_in[12]; // four-screen and $2000-$2FFF accessed 
