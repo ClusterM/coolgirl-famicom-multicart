@@ -1,0 +1,8 @@
+*.qws
+*.bak
+*.qdf
+db/
+incremental_db/
+output_files/
+simulation/
+*.dip~
