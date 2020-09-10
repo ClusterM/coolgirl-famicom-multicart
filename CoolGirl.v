@@ -1,28 +1,28 @@
 module CoolGirl2 # (
-      parameter USE_MAPPER_005 = 1,             // MMC5 - Castlevania 3 only
-      parameter USE_MAPPER_009_010 = 1,         // mapper #009 - MMC2, #10 - MMC4
+      parameter USE_MAPPER_005 = 1,             // MMC5 (partical support): Castlevania 3 only
+      parameter USE_MAPPER_009_010 = 1,         // mapper #009 - MMC2, #010 - MMC4
       parameter USE_MAPPER_011 = 1,             // mapper #011 - Color Dreams
       parameter USE_MAPPER_018 = 0,             // mapper #018
       parameter USE_MAPPER_021_022_023_025 = 1, // mappers #021, #022, #023, #025 - VRC2, VRC4
       parameter USE_MAPPER_022 = 1,             // mapper #022 - VRC2a (shifted CHR lines)
-      parameter USE_VRC4_INTERRUPTS = 1,        // for VRC4
+      parameter USE_VRC4_INTERRUPTS = 1,        // VRC4 interrupts
       parameter USE_MAPPER_030 = 0,             // mapper #030 - UNROM512
       parameter USE_MAPPER_032 = 1,             // mapper #032 - IREM G101
       parameter USE_MAPPER_033_048 = 1,         // mappers #033 & #048 - Taito      
-      parameter USE_MAPPER_048_INTERRUPTS = 0,  // mapper #048 - Taito
+      parameter USE_MAPPER_048_INTERRUPTS = 0,  // mapper #048 interrupts
       parameter USE_MAPPER_034_BxROM = 0,       // mapper #034 - BxROM: Deadly Towers (Mashou), Darkseed
       parameter USE_MAPPER_036 = 0,             // mapper #036 - TXC's PCB 01-22000-400
       parameter USE_MAPPER_042 = 0,             // mapper #042
-      parameter USE_MAPPER_042_INTERRUPTS = 0,  // mapper #042 (for Mario Baby only)
+      parameter USE_MAPPER_042_INTERRUPTS = 0,  // mapper #042 interrupts: for Mario Baby only
       parameter USE_MAPPER_065 = 1,             // mapper #065 - Irem's H3001
       parameter USE_MAPPER_066 = 1,             // mapper #066 - GxROM
       parameter USE_MAPPER_069 = 1,             // mapper #069 - Sunsoft
       parameter USE_MAPPER_070 = 0,             // mapper #070: Family Trainer, Kamen Rider Club, Space Shadow
-      parameter USE_MAPPER_071 = 1,             // mapper #071 (for Fire Hawk only)
+      parameter USE_MAPPER_071 = 1,             // mapper #071: for Fire Hawk only
       parameter USE_MAPPER_073 = 0,             // mapper #073 - VRC3
-      parameter USE_MAPPER_078 = 1,             // mapper #078 - Holy Diver
+      parameter USE_MAPPER_078 = 1,             // mapper #078: Holy Diver
       parameter USE_MAPPER_087 = 1,             // mapper #087
-      parameter USE_MAPPER_090 = 1,             // mapper #090 - JY, for Aladdin only
+      parameter USE_MAPPER_090 = 1,             // mapper #090 - JY (partical support): Aladdin only
       parameter USE_MAPPER_093 = 1,             // mapper #093
       parameter USE_MAPPER_097 = 1,             // mapper #097 - IREM TAMS1
       parameter USE_MAPPER_112 = 0,             // mapper #112
@@ -30,7 +30,7 @@ module CoolGirl2 # (
       parameter USE_MAPPER_152 = 1,             // mapper #152
       parameter USE_MAPPER_163 = 1,             // mapper #163
       parameter USE_MAPPER_189 = 1,             // mapper #189
-      parameter USE_MAPPER_228 = 1,             // mapper #228 - Cheetahmen II only
+      parameter USE_MAPPER_228 = 1,             // mapper #228: Cheetahmen II only
       parameter USE_MAPPER_241 = 1,             // mapper #241 - BNROM
       
       parameter USE_FOUR_SCREEN = 1,
