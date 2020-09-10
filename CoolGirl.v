@@ -1,3 +1,7 @@
+/*
+   COOLGIRL Multicart brunch 4.x
+*/
+
 module CoolGirl4 # (
       parameter USE_MAPPER_005 = 1,             // MMC5 (partical support): Castlevania 3 only
       parameter USE_MAPPER_009_010 = 1,         // mapper #009 - MMC2, #010 - MMC4
