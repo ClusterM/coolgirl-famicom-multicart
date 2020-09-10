@@ -90,6 +90,8 @@
                {1'b1, r5[0] ? r2 : r1} :
          (USE_MAPPER_005 && (mapper == 5'b01111) && (cpu_addr_in[14:0] == 15'h5204)) ?
                {1'b1, irq_scanline2_out, ~new_screen, 6'b000000} :
+         (USE_MAPPER_036 && mapper == 5'b11101 && {cpu_addr_in[14:13], cpu_addr_in[8]} == 3'b101) ? // Need by Strike Wolf, being simplified mapper, this cart still uses some TCX mapper features andrely on it
+               {1'b1, 2'b00, prg_bank_a[3:2], 4'b00} :
          //(USE_MAPPER_090_MUL && (mapper == 5'b01101) && (cpu_addr_in[14:0] == 15'h5800)) ? {1'b1, mul[7:0]} :
          //(USE_MAPPER_090_MUL && (mapper == 5'b01101) && (cpu_addr_in[14:0] == 15'h5801)) ? {1'b1, mul[15:8]} :
          9'b000000000
@@ -430,7 +432,7 @@
                   irq_scanline2_enabled = cpu_data_in[7];
                   //irq_scanline2_clear = 1;
                end
-            end   
+            end
             
             // temp/test
             /*
@@ -538,12 +540,10 @@
                endcase
             end
 
-            // Mapper #7 - AxROM, mapper #241 - BNROM
+            // Mapper #7 - AxROM
             if (mapper == 5'b01000)
             begin
                prg_bank_a[5:2] = cpu_data_in[3:0];
-               if (!USE_MAPPER_241 || !flags[0]) // BNROM?
-                  mirroring = {1'b1, cpu_data_in[4]};
             end
             
             // Mapper #228 - Cheetahmen II            
@@ -1005,6 +1005,36 @@
                   end
                endcase
             end
+
+            // Mapper #30 - UNROM 512
+            if (USE_MAPPER_030 && mapper == 5'b11011)
+            begin
+               // One screen Mirroring select, CHR RAM bank, PRG ROM bank
+               { mirroring, chr_bank_a[1:0], prg_bank_a[5:1]} = {1'b1, cpu_data_in[7:0]};
+            end
+
+            // Mapper #34 - BxROM
+            if (USE_MAPPER_034_BxROM && mapper == 5'b11110)
+            begin
+               prg_bank_a[5:2] = cpu_data_in[3:0];
+            end
+
+            // Mapper #36
+            if (USE_MAPPER_036 && mapper == 5'b11101)
+            begin
+               if (cpu_addr_in[14:1] != 14'b11111111111111)
+               begin
+                  prg_bank_a[5:2] = cpu_data_in[7:4];
+                  chr_bank_a[6:3] = cpu_data_in[3:0];
+               end
+            end
+
+            // Mapper #70
+            if (USE_MAPPER_070 && mapper == 5'b11110)
+            begin
+               prg_bank_a[4:1] = cpu_data_in[7:4];
+               chr_bank_a[6:3] = cpu_data_in[3:0];
+            end
          end // romsel
       end // write
       
@@ -1071,7 +1101,9 @@
       end else if (ppu_rd_hi_time < 4'b1111)
       begin
          ppu_rd_hi_time = ppu_rd_hi_time + 1'b1;
-      end else new_screen = 1;
+      end else begin
+         new_screen = 1;
+      end
    end   
    
    // Scanline counter
@@ -1111,5 +1143,3 @@
          if (ppu_addr_in[13:3] == 11'b01111111101) ppu_latch1 = 1;
       end
    end
-
-	
