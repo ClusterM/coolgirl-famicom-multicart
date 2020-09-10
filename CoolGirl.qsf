@@ -39,7 +39,7 @@
 
 set_global_assignment -name FAMILY "MAX II"
 set_global_assignment -name DEVICE EPM1270T144C5
-set_global_assignment -name TOP_LEVEL_ENTITY CoolGirl
+set_global_assignment -name TOP_LEVEL_ENTITY CoolGirl2
 set_global_assignment -name ORIGINAL_QUARTUS_VERSION 15.1.0
 set_global_assignment -name PROJECT_CREATION_TIME_DATE "19:53:22  MAY 05, 2016"
 set_global_assignment -name LAST_QUARTUS_VERSION "17.0.0 Lite Edition"
@@ -138,6 +138,10 @@ set_location_assignment PIN_60 -to ppu_addr_in[9]
 set_location_assignment PIN_91 -to m2
 set_location_assignment PIN_49 -to ppu_addr_out[13]
 set_location_assignment PIN_130 -to sram_oe
+set_global_assignment -name CDF_FILE CoolGirl.cdf
+set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "NO HEAT SINK WITH STILL AIR"
+set_global_assignment -name OPTIMIZATION_MODE BALANCED
+set_location_assignment PIN_93 -to ppu_not_a13_out
 set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to m2
 set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to ppu_rd_in
 set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to ppu_wr_in
@@ -146,9 +150,5 @@ set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to cpu_rw_in
 set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to romsel
 set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to sram_we
 set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to sram_ce
-set_global_assignment -name CDF_FILE CoolGirl.cdf
 set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to ppu_ciram_ce
-set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "NO HEAT SINK WITH STILL AIR"
-set_global_assignment -name OPTIMIZATION_MODE BALANCED
-set_location_assignment PIN_93 -to ppu_not_a13_out
 set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to ppu_not_a13_out
