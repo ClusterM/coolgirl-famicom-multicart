@@ -4,9 +4,9 @@
 
 module CoolGirl # (
       parameter USE_MAPPER_005 = 1,             // MMC5 (partical support): Castlevania 3 only
-      parameter USE_MAPPER_009_010 = 1,         // mapper #009 - MMC2, #010 - MMC4
+      parameter USE_MAPPER_009_010 = 1,         // mappers #009 - MMC2, #010 - MMC4
       parameter USE_MAPPER_011 = 1,             // mapper #011 - Color Dreams
-      parameter USE_MAPPER_018 = 0,             // mapper #018
+      parameter USE_MAPPER_018 = 0,             // mapper #018 - Jaleco SS 88006
       parameter USE_MAPPER_021_022_023_025 = 1, // mappers #021, #022, #023, #025 - VRC2, VRC4
       parameter USE_MAPPER_022 = 1,             // mapper #022 - VRC2a (shifted CHR lines)
       parameter USE_VRC4_INTERRUPTS = 1,        // VRC4 interrupts
@@ -14,27 +14,27 @@ module CoolGirl # (
       parameter USE_MAPPER_032 = 1,             // mapper #032 - IREM G101
       parameter USE_MAPPER_033_048 = 1,         // mappers #033 & #048 - Taito      
       parameter USE_MAPPER_048_INTERRUPTS = 0,  // mapper #048 interrupts
-      parameter USE_MAPPER_034_241_BxROM = 1,   // mapper #034 - BxROM: Deadly Towers (Mashou), Darkseed
+      parameter USE_MAPPER_034_241_BxROM = 1,   // mappers #034 & #241 - BxROM: Deadly Towers (Mashou), Darkseed
       parameter USE_MAPPER_036 = 0,             // mapper #036 - TXC's PCB 01-22000-400
       parameter USE_MAPPER_042 = 1,             // mapper #042 - FDS conversions
       parameter USE_MAPPER_042_INTERRUPTS = 0,  // mapper #042 interrupts: for Mario Baby only
       parameter USE_MAPPER_065 = 1,             // mapper #065 - Irem's H3001
       parameter USE_MAPPER_066 = 1,             // mapper #066 - GxROM
-      parameter USE_MAPPER_069 = 1,             // mapper #069 - Sunsoft
-      parameter USE_MAPPER_070 = 0,             // mapper #070: Family Trainer, Kamen Rider Club, Space Shadow
-      parameter USE_MAPPER_071 = 1,             // mapper #071: for Fire Hawk only
+      parameter USE_MAPPER_069 = 1,             // mapper #069 - Sunsoft FME-7
+      parameter USE_MAPPER_070 = 0,             // mapper #070 - Bandai: Family Trainer, Kamen Rider Club, Space Shadow
+      parameter USE_MAPPER_071 = 1,             // mapper #071 - Camerica: for Fire Hawk only
       parameter USE_MAPPER_073 = 0,             // mapper #073 - VRC3
-      parameter USE_MAPPER_078 = 1,             // mapper #078: Holy Diver
-      parameter USE_MAPPER_087 = 1,             // mapper #087
+      parameter USE_MAPPER_078 = 1,             // mapper #078 - Irem: Holy Diver and Uchuusen - Cosmo Carrier
+      parameter USE_MAPPER_087 = 1,             // mapper #087 - Jaleco
       parameter USE_MAPPER_090 = 1,             // mapper #090 - JY (partical support): Aladdin only
-      parameter USE_MAPPER_093 = 1,             // mapper #093 - Sunsoft 2: Shanghai, Fantasy Zone
+      parameter USE_MAPPER_093 = 1,             // mapper #093 - Sunsoft-2: Shanghai, Fantasy Zone
       parameter USE_MAPPER_097 = 0,             // mapper #097 - IREM TAMS1
-      parameter USE_MAPPER_112 = 0,             // mapper #112
+      parameter USE_MAPPER_112 = 0,             // mapper #112 - NTDEC
       parameter USE_MAPPER_118 = 1,             // mapper #118 - TxSROM
-      parameter USE_MAPPER_152 = 1,             // mapper #152
-      parameter USE_MAPPER_163 = 1,             // mapper #163
-      parameter USE_MAPPER_189 = 1,             // mapper #189
-      parameter USE_MAPPER_228 = 0,             // mapper #228: Cheetahmen II only
+      parameter USE_MAPPER_152 = 1,             // mapper #152 - Bandai
+      parameter USE_MAPPER_163 = 1,             // mapper #163 - Nanjing
+      parameter USE_MAPPER_189 = 1,             // mapper #189 - TXC
+      parameter USE_MAPPER_228 = 0,             // mapper #228 - Action52: Cheetahmen II only
       
       parameter USE_FOUR_SCREEN = 1,            // Enable four-screen support, required by some games
       parameter UxROM_BITSIZE = 4,              // Maximum size for UxROM PRG (3=256KB - standard size, 4=512KB - required for some hacks/homebrew)
