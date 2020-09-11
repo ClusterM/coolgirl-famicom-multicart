@@ -549,7 +549,9 @@
             // Mapper #7 - AxROM
             if (mapper == 5'b01000)
             begin
-               prg_bank_a[AxROM_BITSIZE+2:2] = cpu_data_in[AxROM_BITSIZE:0];
+               prg_bank_a[AxROM_BxROM_BITSIZE+2:2] = cpu_data_in[AxROM_BxROM_BITSIZE:0];
+					if (!USE_MAPPER_034_241_BxROM || !flags[0]) // BxROM?
+						mirroring = {1'b1, cpu_data_in[4]};
             end
             
             // Mapper #228 - Cheetahmen II            
@@ -1010,12 +1012,6 @@
                      endcase
                   end
                endcase
-            end
-
-            // Mapper #34 - BxROM
-            if (USE_MAPPER_034_241_BxROM && mapper == 5'b11110)
-            begin
-               prg_bank_a[BxROM_BITSIZE+2:2] = cpu_data_in[BxROM_BITSIZE:0];
             end
 
             // Mapper #36
