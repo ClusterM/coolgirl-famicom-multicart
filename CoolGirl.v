@@ -38,8 +38,7 @@ module CoolGirl # (
       
       parameter USE_FOUR_SCREEN = 1,            // Enable four-screen support, required by some games
       parameter UxROM_BITSIZE = 4,              // Maximum size for UxROM PRG (3=256KB - standard size, 4=512KB - required for some hacks/homebrew)
-      parameter AxROM_BITSIZE = 3,              // Maximum size for AxROM PRG (3=256KB - standard size, 4=512KB - required for some hacks/homebrew)
-		parameter BxROM_BITSIZE = 3,              // Maximum size for BxROM PRG (1=128KB - standard size, 3=512KB - required for some hacks/homebrew)
+      parameter AxROM_BxROM_BITSIZE = 3,        // Maximum size for AxROM/BxROM PRG (2=256KB - standard size, 3=512KB - required for some hacks/homebrew)
       parameter MMC3_BITSIZE = 8                // Maximum size for MMC3 PRG (6=512KB - standard size, 8=2MB - required for some hacks/homebrew)
    )
    (
