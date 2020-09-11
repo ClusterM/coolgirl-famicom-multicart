@@ -141,7 +141,6 @@ set_location_assignment PIN_105 -to ppu_data_in[3]
 set_location_assignment PIN_106 -to ppu_data_in[2]
 set_location_assignment PIN_107 -to ppu_data_in[1]
 set_location_assignment PIN_108 -to ppu_data_in[0]
-set_location_assignment PIN_133 -to ppu_ce2_out
 set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to cpu_rw_in
 set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to irq
 set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to m2
@@ -149,7 +148,7 @@ set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to ppu_not_a13
 set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to ppu_wr_in
 set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to romsel
 set_global_assignment -name OPTIMIZATION_MODE BALANCED
-set_instance_assignment -name IO_STANDARD "3.3V SCHMITT TRIGGER INPUT" -to cpu_addr_in[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to cpu_addr_in[0]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to cpu_addr_in[1]
 set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to ppu_data_in[0]
 set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to ppu_data_in[1]
@@ -169,3 +168,7 @@ set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to cpu_data_in[5]
 set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to cpu_data_in[6]
 set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to cpu_data_in[7]
 set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to cpu_shifers_oe
+set_location_assignment PIN_60 -to cpu_addr_in[1]
+set_location_assignment PIN_133 -to ppu_addr_out[18]
+set_location_assignment PIN_5 -to sram_addr_out[14]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to cpu_addr_in
