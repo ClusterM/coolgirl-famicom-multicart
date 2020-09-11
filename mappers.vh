@@ -461,7 +461,13 @@
             begin
                if (!USE_MAPPER_071 | ~flags[0] | (cpu_addr_in[14:12] != 3'b001))
                begin
-                  prg_bank_a[5:1] = cpu_data_in[4:0];
+                  prg_bank_a[UxROM_BITSIZE+1:1] = cpu_data_in[UxROM_BITSIZE:0];
+                  // Mapper #30 - UNROM 512
+                  if (USE_MAPPER_030 && flags[1])
+                  begin
+                     // One screen mirroring select, CHR RAM bank, PRG ROM bank
+                     {mirroring, chr_bank_a[1:0]} = {1'b1, cpu_data_in[7:6]};
+                  end                  
                end else begin // CodeMasters, blah. Mirroring control used only by Fire Hawk
                   mirroring[1:0] = {1'b1, cpu_data_in[4]};
                end
@@ -543,7 +549,7 @@
             // Mapper #7 - AxROM
             if (mapper == 5'b01000)
             begin
-               prg_bank_a[5:2] = cpu_data_in[3:0];
+               prg_bank_a[AxROM_BITSIZE+2:2] = cpu_data_in[AxROM_BITSIZE:0];
             end
             
             // Mapper #228 - Cheetahmen II            
@@ -1006,17 +1012,10 @@
                endcase
             end
 
-            // Mapper #30 - UNROM 512
-            if (USE_MAPPER_030 && mapper == 5'b11011)
-            begin
-               // One screen Mirroring select, CHR RAM bank, PRG ROM bank
-               { mirroring, chr_bank_a[1:0], prg_bank_a[5:1]} = {1'b1, cpu_data_in[7:0]};
-            end
-
             // Mapper #34 - BxROM
-            if (USE_MAPPER_034_BxROM && mapper == 5'b11110)
+            if (USE_MAPPER_034_241_BxROM && mapper == 5'b11110)
             begin
-               prg_bank_a[5:2] = cpu_data_in[3:0];
+               prg_bank_a[BxROM_BITSIZE+2:2] = cpu_data_in[BxROM_BITSIZE:0];
             end
 
             // Mapper #36
