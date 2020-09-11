@@ -88,9 +88,7 @@ module CoolGirl # (
    wire flash_ce_w = ~(~romsel | (m2 & map_rom_on_6000 & cpu_addr_in[14] & cpu_addr_in[13]));
    assign flash_ce = flash_ce_w
       | cpu_data_out_enabled;
-   assign flash_oe = (~cpu_rw_in | flash_ce_w
-      | sram_oe // for version 3.0 only
-      )
+   assign flash_oe = (~cpu_rw_in | flash_ce_w)
       & ~cpu_data_out_enabled; // to switch data direction
    assign flash_we = cpu_rw_in | flash_ce_w | ~prg_write_enabled;
    wire sram_ce_w = ~(cpu_addr_in[14] & cpu_addr_in[13] & m2 & romsel & sram_enabled & ~map_rom_on_6000);
