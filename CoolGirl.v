@@ -1,5 +1,5 @@
 /*
-   COOLGIRL Multicart brunch 2.x
+   COOLGIRL Multicart branch 2.x
 */
 
 module CoolGirl # (
