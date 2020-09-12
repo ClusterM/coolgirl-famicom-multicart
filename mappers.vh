@@ -97,8 +97,9 @@
          9'b000000000
       ): 9'b000000000;
       
+   // Mirroring: 00=vertical, 01=horizontal, 10=1Sa, 11=1Sb
    assign ppu_ciram_a10 = (USE_MAPPER_118 & (mapper == 6'b010100) & flags[0]) ? ppu_addr_mapped[17] :
-      (mirroring[1] ? mirroring[0] : (mirroring[0] ? ppu_addr_in[11] : ppu_addr_in[10])); // vertical / horizontal, 1Sa, 1Sb        
+      (mirroring[1] ? mirroring[0] : (mirroring[0] ? ppu_addr_in[11] : ppu_addr_in[10]));
 
    wire [20:13] cpu_addr_mapped = (map_rom_on_6000 & romsel & m2) ? prg_bank_6000 :
    (
@@ -368,17 +369,7 @@
                   mul2 = cpu_data_in;
             end
             */
-            
-            // Mapper #189
-            // It's MMC3 with flag1
-            if (USE_MAPPER_189 & flags[1] & (mapper == 6'b010100))
-            begin
-               if (cpu_addr_in[14:0] >= 15'h4120) // $4120-$7FFF
-               begin
-                  prg_bank_a[5:2] = cpu_data_in[3:0] | cpu_data_in[7:4];
-               end
-            end            
-            
+
             // MMC5
             if (USE_MAPPER_005 && mapper == 6'b001111)
             begin
@@ -434,6 +425,48 @@
                end
             end
             
+            // Mapper #189
+            // It's MMC3 with flag1
+            if (USE_MAPPER_189 & flags[1] & (mapper == 6'b010100))
+            begin
+               if (cpu_addr_in[14:0] >= 15'h4120) // $4120-$7FFF
+               begin
+                  prg_bank_a[5:2] = cpu_data_in[3:0] | cpu_data_in[7:4];
+               end
+            end            
+            
+            // Mapper #113 - NINA-03/06
+            if (USE_MAPPER_013 && mapper == 6'b011011)
+            begin             
+               if ({cpu_addr_in[14:13], cpu_addr_in[8]} == 3'b101)
+               begin
+                  // That is, $4100-$41FF, $4300-$43FF, $45xx, $47xx, ..., $5Dxx, and $5Fxx.
+                  chr_bank_a[5:3] = cpu_data_in[2:0];
+                  prg_bank_a[4:2] = cpu_data_in[5:3];
+                  mirroring = {1'b0, ~cpu_data_in[7]};
+               end
+            end            
+
+            // Mapper #133
+            if (USE_MAPPER_133 && mapper == 6'b011100)
+            begin             
+               if ({cpu_addr_in[14:13], cpu_addr_in[8]} == 3'b101)
+               begin
+                  chr_bank_a[4:3] = cpu_data_in[1:0];
+                  prg_bank_a[2] = cpu_data_in[2];
+               end
+            end            
+
+            // Mapper #184
+            if (USE_MAPPER_184 && mapper == 6'b011111)
+            begin             
+               if (cpu_addr_in[14:13] == 2'b11)
+               begin
+                  chr_bank_a[4:2] = cpu_data_in[2:0];
+                  chr_bank_e[4:2] = {1'b1, cpu_data_in[5:4]};
+               end
+            end
+
             // temp/test
             /*
             if (mapper == 6'b011111)
@@ -490,8 +523,8 @@
             // Mapper #97 - Irem's TAM-S1
             if (USE_MAPPER_097 && mapper == 6'b000100)
             begin
-               prg_bank_a[4:1] = cpu_data_in[3:0];
-               mirroring = cpu_data_in[7:6] ^ {~cpu_data_in[6], 1'b0};
+               prg_bank_a[5:1] = cpu_data_in[4:0];
+               mirroring = {1'b0, ~cpu_data_in[7]};
             end
             
             // Mapper #93 - Sunsoft-2
@@ -761,23 +794,27 @@
             r0[2:0] - internal register
             flag0 - TxSROM
             flag1 - mapper #189
+            flag2 - mapper #206 (disable most features)
             */          
             if (mapper == 6'b010100)
             begin
                case ({cpu_addr_in[14:13], cpu_addr_in[0]})
                   3'b000: begin // $8000-$9FFE, even
                      r0[2:0] = cpu_data_in[2:0];
-                     if (!USE_MAPPER_189 | ~flags[1])
+                     if ((!USE_MAPPER_189 | ~flags[1]) & (!USE_MAPPER_206 | ~flags[2])) // disabled for mappers #189 & #206
                      begin
                         if (cpu_data_in[6])
                            prg_mode = 3'b101;
                         else
                            prg_mode = 3'b100;
                      end
-                     if (cpu_data_in[7])
-                        chr_mode = 3'b011;
-                     else
-                        chr_mode = 3'b010;
+                     if (!USE_MAPPER_206 | ~flags[2]) // disabled for mapper #206
+                     begin
+                        if (cpu_data_in[7])
+                           chr_mode = 3'b011;
+                        else
+                           chr_mode = 3'b010;
+                     end
                   end
                   3'b001: begin // $8001-$9FFF, odd
                      case (r0[2:0])
@@ -791,11 +828,13 @@
                         3'b111: if (!USE_MAPPER_189 | ~flags[1]) prg_bank_b[(MMC3_BITSIZE-1):0] = cpu_data_in[(MMC3_BITSIZE-1):0];
                      endcase
                   end
-                  3'b010: mirroring = {1'b0, cpu_data_in[0]}; // $A000-$BFFE, even (mirroring)
+                  3'b010: if (!USE_MAPPER_206 | ~flags[2]) // disabled for mapper #206
+                              mirroring = {1'b0, cpu_data_in[0]}; // $A000-$BFFE, even (mirroring)
                   3'b100: irq_scanline_latch = cpu_data_in; // $C000-$DFFE, even (IRQ latch)
                   3'b101: irq_scanline_reload = 1; // $C001-$DFFF, odd
                   3'b110: irq_scanline_enabled = 0; // $E000-$FFFE, even
-                  3'b111: irq_scanline_enabled = 1; // $E001-$FFFF, odd                
+                  3'b111: if (!USE_MAPPER_206 | ~flags[2]) // disabled for mapper #206
+                              irq_scanline_enabled = 1; // $E001-$FFFF, odd                
                endcase
             end
             
@@ -1013,8 +1052,8 @@
                   end
                endcase
             end
-
-            // Mapper #36
+            
+            // Mapper #36 - TXC's PCB 01-22000-400
             if (USE_MAPPER_036 && mapper == 6'b011101)
             begin
                if (cpu_addr_in[14:1] != 14'b11111111111111)
@@ -1024,7 +1063,7 @@
                end
             end
 
-            // Mapper #70
+            // Mapper #70 - Bandai
             if (USE_MAPPER_070 && mapper == 6'b011110)
             begin
                prg_bank_a[4:1] = cpu_data_in[7:4];

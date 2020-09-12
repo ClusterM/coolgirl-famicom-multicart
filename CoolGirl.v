@@ -6,6 +6,7 @@ module CoolGirl # (
       parameter USE_MAPPER_005 = 1,             // MMC5 (partical support): Castlevania 3 only
       parameter USE_MAPPER_009_010 = 1,         // mappers #009 - MMC2, #010 - MMC4
       parameter USE_MAPPER_011 = 1,             // mapper #011 - Color Dreams
+      parameter USE_MAPPER_013 = 0,             // mapper #113 - NINA-03/06
       parameter USE_MAPPER_018 = 0,             // mapper #018 - Jaleco SS 88006
       parameter USE_MAPPER_021_022_023_025 = 1, // mappers #021, #022, #023, #025 - VRC2, VRC4
       parameter USE_MAPPER_022 = 1,             // mapper #022 - VRC2a (shifted CHR lines)
@@ -28,12 +29,16 @@ module CoolGirl # (
       parameter USE_MAPPER_087 = 1,             // mapper #087 - Jaleco
       parameter USE_MAPPER_090 = 1,             // mapper #090 - JY (partical support): Aladdin only
       parameter USE_MAPPER_093 = 1,             // mapper #093 - Sunsoft-2: Shanghai, Fantasy Zone
-      parameter USE_MAPPER_097 = 0,             // mapper #097 - IREM TAMS1
+      parameter USE_MAPPER_097 = 0,             // mapper #097 - IREM TAMS1: only Kaiketsu Yanchamaru
       parameter USE_MAPPER_112 = 0,             // mapper #112 - NTDEC
+      parameter USE_MAPPER_113 = 0,             // mapper #113 - NINA-03/06
       parameter USE_MAPPER_118 = 1,             // mapper #118 - TxSROM
+      parameter USE_MAPPER_133 = 0,             // mapper #133 - Sachen, 72-pin version only
       parameter USE_MAPPER_152 = 1,             // mapper #152 - Bandai
       parameter USE_MAPPER_163 = 1,             // mapper #163 - Nanjing
+      parameter USE_MAPPER_184 = 0,             // mapper #184
       parameter USE_MAPPER_189 = 1,             // mapper #189 - TXC
+      parameter USE_MAPPER_206 = 0,             // mapper #206 - the simpler predecessor of the MMC3
       parameter USE_MAPPER_228 = 0,             // mapper #228 - Action52: Cheetahmen II only
       
       parameter USE_FOUR_SCREEN = 1,            // Enable four-screen support, required by some games
