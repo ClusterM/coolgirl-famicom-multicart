@@ -63,7 +63,7 @@ module CoolGirl # (
       
    input ppu_rd_in,
    input ppu_wr_in,
-   input [13:0] ppu_addr_in,
+   input [13:3] ppu_addr_in,
    output [18:10] ppu_addr_out,
    output ppu_rd_out,
    output ppu_wr_out,
