@@ -17,7 +17,7 @@
    reg [7:0] chr_bank_f = 5;
    reg [7:0] chr_bank_g = 6;
    reg [7:0] chr_bank_h = 7;
-   reg [4:0] mapper = 0;
+   reg [5:0] mapper = 0;
    reg [2:0] flags = 0;
    reg sram_enabled = 0;
    reg [1:0] sram_page = 0;
@@ -84,20 +84,20 @@
       (m2 & romsel & cpu_rw_in) ?
       (
          ((mapper == 0) && (cpu_addr_in[14:12] == 3'b101)) ? {8'b10000000, new_dendy} :
-         (USE_MAPPER_163 && (mapper == 5'b00110) && ({cpu_addr_in[14:12],cpu_addr_in[10:8]} == 6'b101001)) ? 
+         (USE_MAPPER_163 && (mapper == 6'b000110) && ({cpu_addr_in[14:12],cpu_addr_in[10:8]} == 6'b101001)) ? 
                {1'b1, r2 | r0 | r1 | ~r3} :
-         (USE_MAPPER_163 && (mapper == 5'b00110) && ({cpu_addr_in[14:12],cpu_addr_in[10:8]} == 6'b101101)) ? 
+         (USE_MAPPER_163 && (mapper == 6'b000110) && ({cpu_addr_in[14:12],cpu_addr_in[10:8]} == 6'b101101)) ? 
                {1'b1, r5[0] ? r2 : r1} :
-         (USE_MAPPER_005 && (mapper == 5'b01111) && (cpu_addr_in[14:0] == 15'h5204)) ?
+         (USE_MAPPER_005 && (mapper == 6'b001111) && (cpu_addr_in[14:0] == 15'h5204)) ?
                {1'b1, irq_scanline2_out, ~new_screen, 6'b000000} :
-         (USE_MAPPER_036 && mapper == 5'b11101 && {cpu_addr_in[14:13], cpu_addr_in[8]} == 3'b101) ? // Need by Strike Wolf, being simplified mapper, this cart still uses some TCX mapper features andrely on it
+         (USE_MAPPER_036 && mapper == 6'b011101 && {cpu_addr_in[14:13], cpu_addr_in[8]} == 3'b101) ? // Need by Strike Wolf, being simplified mapper, this cart still uses some TCX mapper features andrely on it
                {1'b1, 2'b00, prg_bank_a[3:2], 4'b00} :
-         //(USE_MAPPER_090_MUL && (mapper == 5'b01101) && (cpu_addr_in[14:0] == 15'h5800)) ? {1'b1, mul[7:0]} :
-         //(USE_MAPPER_090_MUL && (mapper == 5'b01101) && (cpu_addr_in[14:0] == 15'h5801)) ? {1'b1, mul[15:8]} :
+         //(USE_MAPPER_090_MUL && (mapper == 6'b001101) && (cpu_addr_in[14:0] == 15'h5800)) ? {1'b1, mul[7:0]} :
+         //(USE_MAPPER_090_MUL && (mapper == 6'b001101) && (cpu_addr_in[14:0] == 15'h5801)) ? {1'b1, mul[15:8]} :
          9'b000000000
       ): 9'b000000000;
       
-   assign ppu_ciram_a10 = (USE_MAPPER_118 & (mapper == 5'b10100) & flags[0]) ? ppu_addr_mapped[17] :
+   assign ppu_ciram_a10 = (USE_MAPPER_118 & (mapper == 6'b010100) & flags[0]) ? ppu_addr_mapped[17] :
       (mirroring[1] ? mirroring[0] : (mirroring[0] ? ppu_addr_in[11] : ppu_addr_in[10])); // vertical / horizontal, 1Sa, 1Sb        
 
    wire [20:13] cpu_addr_mapped = (map_rom_on_6000 & romsel & m2) ? prg_bank_6000 :
@@ -183,7 +183,7 @@
    always @ (negedge m2)
    begin    
       // IRQ for VRC4
-      if (USE_MAPPER_021_022_023_025 & USE_VRC4_INTERRUPTS & (mapper == 5'b11000) & (irq_cpu_control[1]))
+      if (USE_MAPPER_021_022_023_025 & USE_VRC4_INTERRUPTS & (mapper == 6'b011000) & (irq_cpu_control[1]))
       begin
          // Cycle mode without prescaler is not used by any games? It's missed in fceux source code.
          if (irq_cpu_control[2]) // cycle mode
@@ -212,7 +212,7 @@
       end
       
       // IRQ for VRC3
-      if (USE_MAPPER_073 & (mapper == 5'b10011) & (irq_cpu_control[1]))
+      if (USE_MAPPER_073 & (mapper == 6'b010011) & (irq_cpu_control[1]))
       begin
          if (irq_cpu_control[2])
          begin // 8-bit mode
@@ -233,7 +233,7 @@
       end      
 
       // IRQ for Sunsoft FME-7
-      if (USE_MAPPER_069 & (mapper == 5'b11001) & (irq_cpu_control[1]))
+      if (USE_MAPPER_069 & (mapper == 6'b011001) & (irq_cpu_control[1]))
       begin
          if ((irq_cpu_value[15:0] == 0) & irq_cpu_control[0]) irq_cpu_out = 1;
          irq_cpu_value[15:0] = irq_cpu_value[15:0] - 1'b1;
@@ -241,7 +241,7 @@
       
       
       // Mapper #18 - Sunsoft-2
-      if (USE_MAPPER_018 && mapper == 5'b00111)
+      if (USE_MAPPER_018 && mapper == 6'b000111)
       begin
          if (irq_cpu_control[0])
          begin
@@ -263,7 +263,7 @@
       end
       
       // Mapper #65 - Irem's H3001
-      if (USE_MAPPER_065 && mapper == 5'b01110)
+      if (USE_MAPPER_065 && mapper == 6'b001110)
       begin
          if (irq_cpu_control[0])
          begin
@@ -276,7 +276,7 @@
       end      
 
       // IRQ for mapper #42
-      if (USE_MAPPER_042 & USE_MAPPER_042_INTERRUPTS & (mapper == 5'b10111) & (irq_cpu_control[0]))
+      if (USE_MAPPER_042 & USE_MAPPER_042_INTERRUPTS & (mapper == 6'b010111) & (irq_cpu_control[0]))
       begin
          irq_cpu_value[14:0] = irq_cpu_value[14:0] + 1'b1;
          irq_cpu_out = irq_cpu_value[14] & irq_cpu_value[13];
@@ -311,15 +311,15 @@
                      {flags[2:0], mapper[4:0]} = cpu_data_in[7:0];         // some flags, mapper
                   3'b111: // $5xx7                                         
                      // some other parameters                  
-                     {lockout, four_screen, mirroring[1:0], prg_write_enabled, chr_write_enabled, sram_enabled} = {cpu_data_in[7], cpu_data_in[5:0]};
+                     {lockout, mapper[5], four_screen, mirroring[1:0], prg_write_enabled, chr_write_enabled, sram_enabled} = cpu_data_in[7:0];
                endcase
                
-               if (USE_MAPPER_009_010 && mapper == 5'b10001) prg_bank_b = 8'b11111101;
-               if (USE_MAPPER_065 && mapper == 5'b01110) prg_bank_b = 1;
+               if (USE_MAPPER_009_010 && mapper == 6'b010001) prg_bank_b = 8'b11111101;
+               if (USE_MAPPER_065 && mapper == 6'b001110) prg_bank_b = 1;
             end
             
             // Mapper #163          
-            if (USE_MAPPER_163 && mapper == 5'b00110)
+            if (USE_MAPPER_163 && mapper == 6'b000110)
             begin
                if (cpu_addr_in[14:0] == 15'h5101)
                begin
@@ -350,7 +350,7 @@
             end
             
             // Mapper #87
-            if (USE_MAPPER_087 && mapper == 5'b01100)
+            if (USE_MAPPER_087 && mapper == 6'b001100)
             begin
                if (cpu_addr_in[14] & cpu_addr_in[13]) // $6000-$7FFF
                begin
@@ -360,7 +360,7 @@
             
             // Mapper #90 - JY
             /*
-            if (USE_MAPPER_090_MUL && mapper == 5'b01101)
+            if (USE_MAPPER_090_MUL && mapper == 6'b001101)
             begin
                if (cpu_addr_in[14:0] == 15'h5800)
                   mul1 = cpu_data_in;
@@ -371,7 +371,7 @@
             
             // Mapper #189
             // It's MMC3 with flag1
-            if (USE_MAPPER_189 & flags[1] & (mapper == 5'b10100))
+            if (USE_MAPPER_189 & flags[1] & (mapper == 6'b010100))
             begin
                if (cpu_addr_in[14:0] >= 15'h4120) // $4120-$7FFF
                begin
@@ -380,7 +380,7 @@
             end            
             
             // MMC5
-            if (USE_MAPPER_005 && mapper == 5'b01111)
+            if (USE_MAPPER_005 && mapper == 6'b001111)
             begin
                // just workaround for Castlevania 3, not real MMC5
                if (cpu_addr_in[14:0] == 15'h5105) // mirroring
@@ -436,7 +436,7 @@
             
             // temp/test
             /*
-            if (mapper == 5'b11111)
+            if (mapper == 6'b011111)
             begin
                if (cpu_addr_in[14:0] == 15'h4025)
                begin
@@ -447,7 +447,7 @@
          end else begin // $8000-$FFFF
             // temp/test
             /*
-            if (mapper == 5'b11111)
+            if (mapper == 6'b011111)
             begin
                prg_bank_6000 = cpu_data_in[4:1] + 4;
                map_rom_on_6000 = 1;
@@ -457,7 +457,7 @@
             // Mapper #2 - UxROM
             // flag0 - mapper #71 - for Fire Hawk only.
             // other mapper-#71 games are UxROM
-            if (mapper == 5'b00001)
+            if (mapper == 6'b000001)
             begin
                if (!USE_MAPPER_071 | ~flags[0] | (cpu_addr_in[14:12] != 3'b001))
                begin
@@ -474,13 +474,13 @@
             end
             
             // Mapper #3 - CNROM
-            if (mapper == 5'b00010)
+            if (mapper == 6'b000010)
             begin
                chr_bank_a[7:3] = cpu_data_in[4:0];
             end
             
             // Mapper #78 - Holy Diver 
-            if (USE_MAPPER_078 && mapper == 5'b00011)
+            if (USE_MAPPER_078 && mapper == 6'b000011)
             begin
                prg_bank_a[3:1] = cpu_data_in[2:0];
                chr_bank_a[6:3] = cpu_data_in[7:4];
@@ -488,21 +488,21 @@
             end
 
             // Mapper #97 - Irem's TAM-S1
-            if (USE_MAPPER_097 && mapper == 5'b00100)
+            if (USE_MAPPER_097 && mapper == 6'b000100)
             begin
                prg_bank_a[4:1] = cpu_data_in[3:0];
                mirroring = cpu_data_in[7:6] ^ {~cpu_data_in[6], 1'b0};
             end
             
             // Mapper #93 - Sunsoft-2
-            if (USE_MAPPER_093 && mapper == 5'b00101)
+            if (USE_MAPPER_093 && mapper == 6'b000101)
             begin
                prg_bank_a[3:1] = {cpu_data_in[6:4]};
                chr_write_enabled = cpu_data_in[0];
             end
             
-            // Mapper #18 - Sunsoft-2
-            if (USE_MAPPER_018 && mapper == 5'b00111)
+            // Mapper #18 - Jaleco SS 88006
+            if (USE_MAPPER_018 && mapper == 6'b000111)
             begin
                case ({cpu_addr_in[14:12], cpu_addr_in[1:0]})
                   5'b00000: prg_bank_a[3:0] = cpu_data_in[3:0]; // $8000
@@ -547,37 +547,37 @@
             end
 
             // Mapper #7 - AxROM
-            if (mapper == 5'b01000)
+            if (mapper == 6'b001000)
             begin
                prg_bank_a[AxROM_BxROM_BITSIZE+2:2] = cpu_data_in[AxROM_BxROM_BITSIZE:0];
-					if (!USE_MAPPER_034_241_BxROM || !flags[0]) // BxROM?
-						mirroring = {1'b1, cpu_data_in[4]};
+               if (!USE_MAPPER_034_241_BxROM || !flags[0]) // BxROM?
+                  mirroring = {1'b1, cpu_data_in[4]};
             end
             
             // Mapper #228 - Cheetahmen II            
-            if (USE_MAPPER_228 && mapper == 5'b01001)
+            if (USE_MAPPER_228 && mapper == 6'b001001)
             begin
                prg_bank_a[5:2] = cpu_addr_in[10:7];
-               chr_bank_a[7:3] = {/*cpu_addr_in[3]*/cpu_addr_in[2:0], cpu_data_in[1:0]}; // only 256k, sorry
+               chr_bank_a[7:3] = {cpu_addr_in[2:0], cpu_data_in[1:0]}; // only 256k, sorry
                mirroring = {1'b0, cpu_addr_in[13]};
             end
             
             // Mapper #11 - ColorDreams
-            if (USE_MAPPER_011 && mapper == 5'b01010)
+            if (USE_MAPPER_011 && mapper == 6'b001010)
             begin
                prg_bank_a[3:2] = cpu_data_in[1:0];
                chr_bank_a[6:3] = cpu_data_in[7:4];
             end
             
             // Mapper #66 - GxROM
-            if (USE_MAPPER_066 && mapper == 5'b01011)
+            if (USE_MAPPER_066 && mapper == 6'b001011)
             begin
                prg_bank_a[3:2] = cpu_data_in[5:4];
                chr_bank_a[4:3] = cpu_data_in[1:0];             
             end
             
             // Mapper #90 - JY
-            if (USE_MAPPER_090 && mapper == 5'b01101)
+            if (USE_MAPPER_090 && mapper == 6'b001101)
             begin
                if (cpu_addr_in[14:12] == 3'b000) // $800x
                begin
@@ -622,7 +622,7 @@
             end
             
             // Mapper #65 - Irem's H3001
-            if (USE_MAPPER_065 && mapper == 5'b01110)
+            if (USE_MAPPER_065 && mapper == 6'b001110)
             begin
                case ({cpu_addr_in[14:12], cpu_addr_in[2:0]})
                   6'b000000: prg_bank_a[5:0] = cpu_data_in[5:0]; // $8000
@@ -655,7 +655,7 @@
             r0 - load register
             flag0 - 16KB of WRAM (SOROM)
             */
-            if (mapper == 5'b10000)
+            if (mapper == 6'b010000)
             begin
                if (cpu_data_in[7] == 1) // reset
                begin
@@ -710,7 +710,7 @@
             
             // Mapper #9 and #10 - MMC2 and MMC4
             // flag0 - 0=MMC2, 1=MMC4
-            if (USE_MAPPER_009_010 && mapper == 5'b10001)
+            if (USE_MAPPER_009_010 && mapper == 6'b010001)
             begin
                case (cpu_addr_in[14:12])
                   3'b010: if (~flags[0]) // $A000-$AFFF
@@ -725,8 +725,8 @@
                endcase
             end
             
-            // Mapper #152
-            if (USE_MAPPER_152 && mapper == 5'b10010)
+            // Mapper #152 - Bandai
+            if (USE_MAPPER_152 && mapper == 6'b010010)
             begin
                chr_bank_a[6:3] = cpu_data_in[3:0];
                prg_bank_a[3:1] = cpu_data_in[6:4];
@@ -734,7 +734,7 @@
             end
       
             // Mapper #73 - VRC3
-            if (USE_MAPPER_073 && mapper == 5'b10011)
+            if (USE_MAPPER_073 && mapper == 6'b010011)
             begin
                case (cpu_addr_in[14:12])
                   3'b000: irq_cpu_latch[3:0] = cpu_data_in[3:0]; // $8000-$8FFF
@@ -762,7 +762,7 @@
             flag0 - TxSROM
             flag1 - mapper #189
             */          
-            if (mapper == 5'b10100)
+            if (mapper == 6'b010100)
             begin
                case ({cpu_addr_in[14:13], cpu_addr_in[0]})
                   3'b000: begin // $8000-$9FFE, even
@@ -801,7 +801,7 @@
             
             // Mapper #112
             // r0[2:0] - internal register
-            if (USE_MAPPER_112 && (mapper == 5'b10101))
+            if (USE_MAPPER_112 && (mapper == 6'b010101))
             begin
                case (cpu_addr_in[14:13])
                   2'b00: r0[2:0] = cpu_data_in[2:0]; // $8000-$9FFF
@@ -824,7 +824,7 @@
 
             // Mappers #33 + #48 - Taito
             // flag0=0 - #33, flag0=1 - #48
-            if (USE_MAPPER_033_048 && (mapper == 5'b10110))
+            if (USE_MAPPER_033_048 && (mapper == 6'b010110))
             begin
                case ({cpu_addr_in[14:13], cpu_addr_in[1:0]})
                   4'b0000: begin
@@ -853,7 +853,7 @@
             end
             
             // Mappers #42
-            if (USE_MAPPER_042 && (mapper == 5'b10111))
+            if (USE_MAPPER_042 && (mapper == 6'b010111))
             begin
                map_rom_on_6000 = 1;
                case ({cpu_addr_in[14], cpu_addr_in[1:0]})
@@ -875,7 +875,7 @@
             flag0 - switches A0 and A1 lines. 0=A0,A1 like VRC2b (mapper #23), 1=A1,A0 like VRC2a(#22), VRC2c(#25)
             flag1 - divides CHR bank select by two (mapper #22, VRC2a)
             */
-            if (USE_MAPPER_021_022_023_025 && mapper == 5'b11000)
+            if (USE_MAPPER_021_022_023_025 && mapper == 6'b011000)
             begin
                case ({cpu_addr_in[14:12], flags[0] ? vrc_2b_low : vrc_2b_hi, flags[0] ? vrc_2b_hi : vrc_2b_low})
                   5'b00000,
@@ -963,7 +963,7 @@
             /*
             r0 - command register
             */          
-            if (USE_MAPPER_069 && mapper == 5'b11001)
+            if (USE_MAPPER_069 && mapper == 6'b011001)
             begin
                if (cpu_addr_in[14:13] == 2'b00) r0[3:0] = cpu_data_in[3:0];
                if (cpu_addr_in[14:13] == 2'b01)
@@ -993,7 +993,7 @@
             end
             
             // Mapper #32 - IREM G-101
-            if (USE_MAPPER_032 && mapper == 5'b11010)
+            if (USE_MAPPER_032 && mapper == 6'b011010)
             begin
                case (cpu_addr_in[13:12])
                   2'b00: prg_bank_a[5:0] = cpu_data_in[5:0]; // PRG0
@@ -1015,7 +1015,7 @@
             end
 
             // Mapper #36
-            if (USE_MAPPER_036 && mapper == 5'b11101)
+            if (USE_MAPPER_036 && mapper == 6'b011101)
             begin
                if (cpu_addr_in[14:1] != 14'b11111111111111)
                begin
@@ -1025,7 +1025,7 @@
             end
 
             // Mapper #70
-            if (USE_MAPPER_070 && mapper == 5'b11110)
+            if (USE_MAPPER_070 && mapper == 6'b011110)
             begin
                prg_bank_a[4:1] = cpu_data_in[7:4];
                chr_bank_a[6:3] = cpu_data_in[3:0];
@@ -1034,7 +1034,7 @@
       end // write
       
       // for MMC5
-      if (USE_MAPPER_005 && mapper == 5'b01111 && romsel && cpu_addr_in[14:0] == 15'h5204) // write or read
+      if (USE_MAPPER_005 && mapper == 6'b001111 && romsel && cpu_addr_in[14:0] == 15'h5204) // write or read
          irq_scanline2_clear = 1;         
       
       // some IRQ stuff
