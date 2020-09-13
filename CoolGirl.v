@@ -6,7 +6,6 @@ module CoolGirl # (
       parameter USE_MAPPER_005 = 1,             // MMC5 (partical support): Castlevania 3 only
       parameter USE_MAPPER_009_010 = 1,         // mappers #009 - MMC2, #010 - MMC4
       parameter USE_MAPPER_011 = 1,             // mapper #011 - Color Dreams
-      parameter USE_MAPPER_013 = 0,             // mapper #113 - NINA-03/06
       parameter USE_MAPPER_018 = 0,             // mapper #018 - Jaleco SS 88006
       parameter USE_MAPPER_021_022_023_025 = 1, // mappers #021, #022, #023, #025 - VRC2, VRC4
       parameter USE_MAPPER_022 = 1,             // mapper #022 - VRC2a (shifted CHR lines)

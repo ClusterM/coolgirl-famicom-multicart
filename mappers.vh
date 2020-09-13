@@ -436,7 +436,7 @@
             end            
             
             // Mapper #113 - NINA-03/06
-            if (USE_MAPPER_013 && mapper == 6'b011011)
+            if (USE_MAPPER_113 && mapper == 6'b011011)
             begin             
                if ({cpu_addr_in[14:13], cpu_addr_in[8]} == 3'b101)
                begin
