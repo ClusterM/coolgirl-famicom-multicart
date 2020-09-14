@@ -43,7 +43,6 @@ set_global_assignment -name TOP_LEVEL_ENTITY CoolGirl
 set_global_assignment -name ORIGINAL_QUARTUS_VERSION 15.1.0
 set_global_assignment -name PROJECT_CREATION_TIME_DATE "19:53:22  MAY 05, 2016"
 set_global_assignment -name LAST_QUARTUS_VERSION "20.1.0 Lite Edition"
-set_global_assignment -name VERILOG_FILE CoolGirl.v
 set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
 set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
 set_global_assignment -name MAX_CORE_JUNCTION_TEMP 85
@@ -133,7 +132,6 @@ set_location_assignment PIN_11 -to ppu_addr_in[9]
 set_location_assignment PIN_89 -to m2
 set_location_assignment PIN_4 -to ppu_addr_out[13]
 set_location_assignment PIN_103 -to sram_oe
-set_global_assignment -name CDF_FILE CoolGirl.cdf
 set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "NO HEAT SINK WITH STILL AIR"
 set_location_assignment PIN_98 -to ppu_not_a13_out
 set_location_assignment PIN_2 -to ppu_addr_out[18]
@@ -145,3 +143,7 @@ set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to ppu_wr_in
 set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to romsel
 set_global_assignment -name OPTIMIZATION_MODE BALANCED
 set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to ppu_not_a13
+set_global_assignment -name VERILOG_INCLUDE_FILE CoolGirl_mappers.vh
+set_global_assignment -name VERILOG_INCLUDE_FILE CoolGirl_config.vh
+set_global_assignment -name VERILOG_FILE CoolGirl.v
+set_global_assignment -name CDF_FILE CoolGirl.cdf
