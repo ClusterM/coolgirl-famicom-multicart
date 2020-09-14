@@ -240,7 +240,7 @@
       begin
          reg carry;
          // Cycle mode without prescaler is not used by any games? It's missed in fceux source code.
-			/*
+         /*
          if (vrc4_irq_cpu_control[2]) // cycle mode
          begin
             {carry, vrc4_irq_cpu_value[7:0]} = vrc4_irq_cpu_value[7:0] + 1'b1; // just count IRQ value
@@ -250,8 +250,8 @@
                vrc4_irq_cpu_value[7:0] = vrc4_irq_cpu_latch[7:0];
             end
          end else
-			*/
-			begin // scanline mode
+         */
+         begin // scanline mode
             vrc4_irq_prescaler = vrc4_irq_prescaler + 1'b1; // count prescaler
             if ((vrc4_irq_prescaler_counter[1] == 0 && vrc4_irq_prescaler == 114) || (vrc4_irq_prescaler_counter[1] == 1 && vrc4_irq_prescaler == 113)) // 114, 114, 113
             begin
@@ -524,6 +524,15 @@
                   chr_bank_e[4:2] = {1'b1, cpu_data_in[5:4]};
                end
             end
+            
+            if (USE_MAPPER_038 && (mapper == 6'b100000))
+            begin
+               if (cpu_addr_in[14:12] == 3'b111)
+               begin
+                  prg_bank_a[3:2] = cpu_data_in[1:0];
+                  chr_bank_a[4:3] = cpu_data_in[3:2];
+               end
+            end            
 
             // temp/test
             /*
