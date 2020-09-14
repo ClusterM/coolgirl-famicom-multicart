@@ -27,6 +27,8 @@ module CoolGirl # (
       parameter USE_MAPPER_078 = 1,             // mapper #078 - Irem: Holy Diver and Uchuusen - Cosmo Carrier
       parameter USE_MAPPER_087 = 1,             // mapper #087 - Jaleco
       parameter USE_MAPPER_090 = 1,             // mapper #090 - JY (partical support): Aladdin only
+      parameter USE_MAPPER_090_ACCURATE_IRQ = 0,// mapper #090 accurate IRQs: for Super Mario World
+      parameter USE_MAPPER_090_MULTIPLIER = 0,  // mapper #090 multiplier: for Super Mario World protection check
       parameter USE_MAPPER_093 = 1,             // mapper #093 - Sunsoft-2: Shanghai, Fantasy Zone
       parameter USE_MAPPER_097 = 0,             // mapper #097 - IREM TAMS1: only Kaiketsu Yanchamaru
       parameter USE_MAPPER_112 = 0,             // mapper #112 - NTDEC
