@@ -172,4 +172,4 @@ set_location_assignment PIN_60 -to cpu_addr_in[1]
 set_location_assignment PIN_133 -to ppu_addr_out[18]
 set_location_assignment PIN_5 -to sram_addr_out[14]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to cpu_addr_in
-set_location_assignment PIN_18 -to ppu_rd_in
+set_location_assignment PIN_20 -to ppu_rd_in

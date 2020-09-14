@@ -109,7 +109,7 @@ module CoolGirl # (
          ext_ntram_access ? 1'b1 : // disable internal NTRAM
          ~ppu_addr_in[13] /*1'bZ*/) // enable it otherwise
          : 1'b0; // ground it while powering on for new famiclones
-   assign ppu_not_a13_out = new_dendy_init_finished ? 1'bZ : 1'b0;  // ground it while powering on for new famiclones
+   assign ppu_not_a13 = new_dendy_init_finished ? 1'bZ : 1'b0;  // ground it while powering on for new famiclones
    assign ppu_data_in = 8'bZZZZZZZZ;
 
    always @ (posedge m2)
