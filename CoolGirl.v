@@ -16,6 +16,7 @@ module CoolGirl # (
       parameter USE_MAPPER_048_INTERRUPTS = 0,  // mapper #048 interrupts
       parameter USE_MAPPER_034_241_BxROM = 1,   // mappers #034 & #241 - BxROM: Deadly Towers (Mashou), Darkseed
       parameter USE_MAPPER_036 = 0,             // mapper #036 - TXC's PCB 01-22000-400
+      parameter USE_MAPPER_038 = 0,             // mapper #038: Crime Busters
       parameter USE_MAPPER_042 = 1,             // mapper #042 - FDS conversions
       parameter USE_MAPPER_042_INTERRUPTS = 0,  // mapper #042 interrupts: for Mario Baby only
       parameter USE_MAPPER_065 = 1,             // mapper #065 - Irem's H3001
