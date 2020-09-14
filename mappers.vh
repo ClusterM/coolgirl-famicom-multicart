@@ -524,7 +524,8 @@
                   chr_bank_e[4:2] = {1'b1, cpu_data_in[5:4]};
                end
             end
-            
+
+				// Mapper #38
             if (USE_MAPPER_038 && (mapper == 6'b100000))
             begin
                if (cpu_addr_in[14:12] == 3'b111)
@@ -534,26 +535,15 @@
                end
             end            
 
-            // temp/test
-            /*
-            if (mapper == 6'b011111)
+            // Mapper AC-08
+            if (USE_MAPPER_AC08 && (mapper == 6'b100001))
             begin
                if (cpu_addr_in[14:0] == 15'h4025)
                begin
                   mirroring = {1'b0, cpu_data_in[3]};
                end
             end
-            */
          end else begin // $8000-$FFFF
-            // temp/test
-            /*
-            if (mapper == 6'b011111)
-            begin
-               prg_bank_6000 = cpu_data_in[4:1] + 4;
-               map_rom_on_6000 = 1;
-            end
-            */
-            
             // Mapper #2 - UxROM
             // flag0 - mapper #71 - for Fire Hawk only.
             // other mapper-#71 games are UxROM
@@ -1155,6 +1145,13 @@
             begin
                prg_bank_a[4:1] = cpu_data_in[7:4];
                chr_bank_a[6:3] = cpu_data_in[3:0];
+            end
+
+				// Mapper AC-08
+            if (USE_MAPPER_AC08 && (mapper == 6'b100001))
+            begin
+               prg_bank_6000[3:0] = cpu_data_in[4:1];
+               map_rom_on_6000 = 1;
             end
          end // romsel
       end // write
