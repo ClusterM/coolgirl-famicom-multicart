@@ -87,6 +87,6 @@ module CoolGirl # (
       end
    end
    
-`include "mappers.vh"
+`include "CoolGirl_mappers.vh"
    
 endmodule
