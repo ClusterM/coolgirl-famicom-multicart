@@ -43,7 +43,7 @@ module CoolGirl # (
    assign cpu_shifers_oe = 1'b0;
    assign ppu_addr_out[18] = 1'b1; // reserved
    
-   assign cpu_addr_out[26:13] = {cpu_base[26:14] | (cpu_addr_mapped[20:14] & ~prg_mask[20:14]), cpu_addr_mapped[13]};
+   assign cpu_addr_out[26:13] = {prg_base[26:14] | (prg_addr_mapped[20:14] & ~prg_mask[20:14]), prg_addr_mapped[13]};
    assign sram_addr_out[14:13] = sram_page[1:0];
    assign ppu_addr_out[17:10] = ext_ntram_access ? {6'b111111, ppu_addr_in[11:10]} : {ppu_addr_mapped[17:13] & ~chr_mask[17:13], ppu_addr_mapped[12:10]};
 
