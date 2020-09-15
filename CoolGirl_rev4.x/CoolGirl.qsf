@@ -1,0 +1,177 @@
+# -------------------------------------------------------------------------- #
+#
+# Copyright (C) 1991-2015 Altera Corporation. All rights reserved.
+# Your use of Altera Corporation's design tools, logic functions 
+# and other software and tools, and its AMPP partner logic 
+# functions, and any output files from any of the foregoing 
+# (including device programming or simulation files), and any 
+# associated documentation or information are expressly subject 
+# to the terms and conditions of the Altera Program License 
+# Subscription Agreement, the Altera Quartus Prime License Agreement,
+# the Altera MegaCore Function License Agreement, or other 
+# applicable license agreement, including, without limitation, 
+# that your use is for the sole purpose of programming logic 
+# devices manufactured by Altera and sold by Altera or its 
+# authorized distributors.  Please refer to the applicable 
+# agreement for further details.
+#
+# -------------------------------------------------------------------------- #
+#
+# Quartus Prime
+# Version 15.1.0 Build 185 10/21/2015 SJ Lite Edition
+# Date created = 19:53:22  May 05, 2016
+#
+# -------------------------------------------------------------------------- #
+#
+# Notes:
+#
+# 1) The default values for assignments are stored in the file:
+#		CoolGirl_assignment_defaults.qdf
+#    If this file doesn't exist, see file:
+#		assignment_defaults.qdf
+#
+# 2) Altera recommends that you do not modify this file. This
+#    file is updated automatically by the Quartus Prime software
+#    and any changes you make may be lost or overwritten.
+#
+# -------------------------------------------------------------------------- #
+
+
+set_global_assignment -name FAMILY "MAX II"
+set_global_assignment -name DEVICE EPM1270T144C5
+set_global_assignment -name TOP_LEVEL_ENTITY CoolGirl
+set_global_assignment -name ORIGINAL_QUARTUS_VERSION 15.1.0
+set_global_assignment -name PROJECT_CREATION_TIME_DATE "19:53:22  MAY 05, 2016"
+set_global_assignment -name LAST_QUARTUS_VERSION "20.1.0 Lite Edition"
+set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
+set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
+set_global_assignment -name MAX_CORE_JUNCTION_TEMP 85
+set_global_assignment -name DEVICE_FILTER_PACKAGE TQFP
+set_global_assignment -name DEVICE_FILTER_PIN_COUNT 144
+set_global_assignment -name ERROR_CHECK_FREQUENCY_DIVISOR "-1"
+set_global_assignment -name POWER_EXT_SUPPLY_VOLTAGE_TO_REGULATOR 3.3V
+set_global_assignment -name EDA_SIMULATION_TOOL "ModelSim-Altera (VHDL)"
+set_global_assignment -name EDA_OUTPUT_DATA_FORMAT VHDL -section_id eda_simulation
+set_global_assignment -name STRATIX_DEVICE_IO_STANDARD "3.3-V LVTTL"
+set_global_assignment -name AUTO_RESTART_CONFIGURATION OFF
+set_global_assignment -name ENABLE_DEVICE_WIDE_RESET ON
+set_global_assignment -name ENABLE_OCT_DONE OFF
+set_global_assignment -name USE_CONFIGURATION_DEVICE ON
+set_location_assignment PIN_57 -to cpu_addr_out[18]
+set_location_assignment PIN_39 -to cpu_addr_out[25]
+set_location_assignment PIN_53 -to cpu_addr_out[19]
+set_location_assignment PIN_40 -to cpu_addr_out[26]
+set_location_assignment PIN_52 -to cpu_addr_out[22]
+set_location_assignment PIN_41 -to cpu_addr_out[17]
+set_location_assignment PIN_51 -to flash_we
+set_location_assignment PIN_50 -to cpu_addr_out[21]
+set_location_assignment PIN_49 -to cpu_addr_out[20]
+set_location_assignment PIN_27 -to cpu_addr_out[13]
+set_location_assignment PIN_29 -to cpu_addr_out[15]
+set_location_assignment PIN_28 -to cpu_addr_out[14]
+set_location_assignment PIN_30 -to cpu_addr_out[16]
+set_location_assignment PIN_31 -to cpu_addr_out[23]
+set_location_assignment PIN_32 -to cpu_addr_out[24]
+set_location_assignment PIN_140 -to ppu_addr_out[16]
+set_location_assignment PIN_143 -to ppu_rd_out
+set_location_assignment PIN_122 -to ppu_addr_out[10]
+set_location_assignment PIN_123 -to ppu_addr_out[11]
+set_location_assignment PIN_132 -to ppu_addr_out[12]
+set_location_assignment PIN_111 -to ppu_addr_in[12]
+set_location_assignment PIN_112 -to ppu_addr_in[13]
+set_location_assignment PIN_134 -to ppu_wr_out
+set_location_assignment PIN_138 -to ppu_addr_out[14]
+set_location_assignment PIN_139 -to ppu_addr_out[15]
+set_location_assignment PIN_117 -to ppu_addr_in[6]
+set_location_assignment PIN_118 -to ppu_addr_in[7]
+set_location_assignment PIN_119 -to ppu_addr_in[5]
+set_location_assignment PIN_120 -to ppu_addr_in[8]
+set_location_assignment PIN_121 -to ppu_addr_in[4]
+set_location_assignment PIN_141 -to ppu_addr_in[3]
+set_location_assignment PIN_124 -to ppu_addr_out[17]
+set_location_assignment PIN_109 -to ppu_addr_in[10]
+set_location_assignment PIN_110 -to ppu_addr_in[11]
+set_location_assignment PIN_97 -to ppu_not_a13
+set_location_assignment PIN_96 -to ppu_ciram_ce
+set_location_assignment PIN_98 -to ppu_ciram_a10
+set_location_assignment PIN_95 -to ppu_wr_in
+set_location_assignment PIN_94 -to irq
+set_location_assignment PIN_93 -to cpu_rw_in
+set_location_assignment PIN_91 -to romsel
+set_location_assignment PIN_3 -to sram_we
+set_location_assignment PIN_1 -to sram_ce
+set_location_assignment PIN_72 -to cpu_addr_in[14]
+set_location_assignment PIN_71 -to cpu_addr_in[13]
+set_location_assignment PIN_59 -to flash_ce
+set_location_assignment PIN_58 -to flash_oe
+set_location_assignment PIN_42 -to cpu_addr_in[0]
+set_location_assignment PIN_81 -to cpu_data_in[0]
+set_location_assignment PIN_69 -to cpu_addr_in[3]
+set_location_assignment PIN_80 -to cpu_data_in[1]
+set_location_assignment PIN_70 -to cpu_addr_in[2]
+set_location_assignment PIN_79 -to cpu_data_in[2]
+set_location_assignment PIN_68 -to cpu_addr_in[4]
+set_location_assignment PIN_78 -to cpu_data_in[3]
+set_location_assignment PIN_77 -to cpu_data_in[4]
+set_location_assignment PIN_76 -to cpu_data_in[5]
+set_location_assignment PIN_67 -to cpu_addr_in[5]
+set_location_assignment PIN_75 -to cpu_data_in[6]
+set_location_assignment PIN_66 -to cpu_addr_in[6]
+set_location_assignment PIN_74 -to cpu_data_in[7]
+set_location_assignment PIN_63 -to cpu_addr_in[7]
+set_location_assignment PIN_62 -to cpu_addr_in[8]
+set_location_assignment PIN_48 -to cpu_addr_in[9]
+set_location_assignment PIN_45 -to cpu_addr_in[10]
+set_location_assignment PIN_44 -to cpu_addr_in[11]
+set_location_assignment PIN_43 -to cpu_addr_in[12]
+set_location_assignment PIN_4 -to sram_addr_out[13]
+set_location_assignment PIN_142 -to ppu_addr_in[9]
+set_location_assignment PIN_89 -to m2
+set_location_assignment PIN_137 -to ppu_addr_out[13]
+set_location_assignment PIN_2 -to sram_oe
+set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "NO HEAT SINK WITH STILL AIR"
+set_location_assignment PIN_73 -to cpu_shifers_oe
+set_location_assignment PIN_101 -to ppu_data_in[4]
+set_location_assignment PIN_102 -to ppu_data_in[5]
+set_location_assignment PIN_103 -to ppu_data_in[6]
+set_location_assignment PIN_104 -to ppu_data_in[7]
+set_location_assignment PIN_105 -to ppu_data_in[3]
+set_location_assignment PIN_106 -to ppu_data_in[2]
+set_location_assignment PIN_107 -to ppu_data_in[1]
+set_location_assignment PIN_108 -to ppu_data_in[0]
+set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to cpu_rw_in
+set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to irq
+set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to m2
+set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to ppu_not_a13
+set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to ppu_wr_in
+set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to romsel
+set_global_assignment -name OPTIMIZATION_MODE BALANCED
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to cpu_addr_in[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to cpu_addr_in[1]
+set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to ppu_data_in[0]
+set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to ppu_data_in[1]
+set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to ppu_data_in[2]
+set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to ppu_data_in[3]
+set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to ppu_data_in[7]
+set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to ppu_data_in[6]
+set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to ppu_data_in[5]
+set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to ppu_data_in[4]
+set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to ppu_ciram_ce
+set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to cpu_data_in[0]
+set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to cpu_data_in[1]
+set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to cpu_data_in[2]
+set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to cpu_data_in[3]
+set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to cpu_data_in[4]
+set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to cpu_data_in[5]
+set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to cpu_data_in[6]
+set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to cpu_data_in[7]
+set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to cpu_shifers_oe
+set_location_assignment PIN_60 -to cpu_addr_in[1]
+set_location_assignment PIN_133 -to ppu_addr_out[18]
+set_location_assignment PIN_5 -to sram_addr_out[14]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to cpu_addr_in
+set_location_assignment PIN_20 -to ppu_rd_in
+set_global_assignment -name VERILOG_INCLUDE_FILE ../CoolGirl_mappers.vh
+set_global_assignment -name VERILOG_INCLUDE_FILE ../CoolGirl_config.vh
+set_global_assignment -name VERILOG_FILE CoolGirl.v
+set_global_assignment -name CDF_FILE CoolGirl.cdf
