@@ -25,16 +25,14 @@ module CoolGirl # (
    input ppu_rd_in,
    input ppu_wr_in,
    input [13:3] ppu_addr_in,
-   output [17:10] ppu_addr_out,
+   output [18:10] ppu_addr_out,
    output ppu_rd_out,
    output ppu_wr_out,
    output ppu_ciram_a10,
    inout ppu_not_a13,
    output ppu_ciram_ce,
       
-   output irq,
-   
-   output ppu_ce2_out
+   output irq
 );
    reg [3:0] new_dendy_init = 4'b1111;
    reg [1:0] new_dendy_init_a13l = 2'b11;
@@ -66,7 +64,7 @@ module CoolGirl # (
          : 1'b0; // ground it while powering on for new famiclones
    assign ppu_not_a13 = new_dendy_init_finished ? 1'bZ : 1'b0;  // ground it while powering on for new famiclones
    assign cpu_shifers_oe = 1'b0;
-   assign ppu_ce2_out = 1'b1;
+   assign ppu_addr_out[18] = 1'b1;
 
    always @ (posedge m2)
    begin
