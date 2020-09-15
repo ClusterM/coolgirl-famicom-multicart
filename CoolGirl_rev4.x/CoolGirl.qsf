@@ -171,7 +171,7 @@ set_location_assignment PIN_133 -to ppu_addr_out[18]
 set_location_assignment PIN_5 -to sram_addr_out[14]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to cpu_addr_in
 set_location_assignment PIN_20 -to ppu_rd_in
-set_global_assignment -name VERILOG_INCLUDE_FILE CoolGirl_mappers.vh
-set_global_assignment -name VERILOG_INCLUDE_FILE CoolGirl_config.vh
+set_global_assignment -name VERILOG_INCLUDE_FILE ../CoolGirl_mappers.vh
+set_global_assignment -name VERILOG_INCLUDE_FILE ../CoolGirl_config.vh
 set_global_assignment -name VERILOG_FILE CoolGirl.v
 set_global_assignment -name CDF_FILE CoolGirl.cdf
