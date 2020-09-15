@@ -152,5 +152,5 @@ set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to ppu_ciram_ce
 set_instance_assignment -name IO_STANDARD "3.3-V PCI" -to ppu_not_a13_out
 set_global_assignment -name VERILOG_INCLUDE_FILE CoolGirl_mappers.vh
 set_global_assignment -name VERILOG_INCLUDE_FILE CoolGirl_config.vh
-set_global_assignment -name VERILOG_FILE CoolGirl.v
-set_global_assignment -name CDF_FILE CoolGirl.cdf
+set_global_assignment -name VERILOG_FILE ../CoolGirl.v
+set_global_assignment -name CDF_FILE ../CoolGirl.cdf
