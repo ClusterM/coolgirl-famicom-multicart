@@ -3,7 +3,7 @@
 */
 
 module CoolGirl # (
-   `include "CoolGirl_config.vh"
+   `include "../CoolGirl_config.vh"
 )
 (
    input m2,
@@ -87,6 +87,6 @@ module CoolGirl # (
       end
    end
    
-`include "CoolGirl_mappers.vh"
+`include "../CoolGirl_mappers.vh"
    
 endmodule
