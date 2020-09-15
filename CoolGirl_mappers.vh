@@ -1,4 +1,4 @@
-reg [26:14] cpu_base = 0;
+reg [26:14] prg_base = 0;
 reg [20:14] prg_mask = 7'b1111000;
 reg [17:13] chr_mask = 0;
 reg [2:0] prg_mode = 0;
@@ -38,8 +38,8 @@ assign irq = (
    mmc5_irq_out | 
    mapper18_irq_out | 
    mapper65_irq_out | 
-   vrc4_irq_cpu_out | 
-   vrc3_irq_cpu_out | 
+   vrc4_irq_out | 
+   vrc3_irq_out | 
    fme7_irq_out | 
    mapper42_irq_out | 
    mapper90_irq_out) ? 1'b0 : 1'bZ;
@@ -79,17 +79,17 @@ reg fme7_counter_enabled = 0;       // register to enable/disable counter
 reg [15:0] fme7_irq_value = 0;      // counter itself (downcounting)
 reg fme7_irq_out = 0;               // stores 1 when IRQ is triggered
 // for VRC4 CPU-based interrupts
-reg [7:0] vrc4_irq_cpu_value = 0;   // counter itself (upcounting)
-reg [2:0] vrc4_irq_cpu_control = 0; // IRQ settings
-reg [7:0] vrc4_irq_cpu_latch = 0;   // stores counter reload latch value
+reg [7:0] vrc4_irq_value = 0;   // counter itself (upcounting)
+reg [2:0] vrc4_irq_control = 0; // IRQ settings
+reg [7:0] vrc4_irq_latch = 0;   // stores counter reload latch value
 reg [6:0] vrc4_irq_prescaler = 0;   // prescaler counter for VRC4
 reg [1:0] vrc4_irq_prescaler_counter = 0; // prescaler cicles counter for VRC4
-reg vrc4_irq_cpu_out = 0;           // stores 1 when IRQ is triggered
+reg vrc4_irq_out = 0;           // stores 1 when IRQ is triggered
 // for VRC3 CPU-based interrupts
-reg [15:0] vrc3_irq_cpu_value = 0;  // counter itself (upcounting/downcounting depends on mapper)
-reg [3:0] vrc3_irq_cpu_control = 0; // IRQ settings (individual for different mappers)
-reg [15:0] vrc3_irq_cpu_latch = 0;  // stores counter reload latch value
-reg vrc3_irq_cpu_out = 0;           // stores 1 when IRQ is triggered
+reg [15:0] vrc3_irq_value = 0;  // counter itself (upcounting/downcounting depends on mapper)
+reg [3:0] vrc3_irq_control = 0; // IRQ settings (individual for different mappers)
+reg [15:0] vrc3_irq_latch = 0;  // stores counter reload latch value
+reg vrc3_irq_out = 0;           // stores 1 when IRQ is triggered
 // for mapper #42 (only Baby Mario)
 reg mapper42_irq_enabled = 0;       // register to enable/disable counter
 reg [14:0] mapper42_irq_value = 0;  // counter itself (upcounting)
@@ -151,7 +151,7 @@ assign {cpu_data_out_enabled, cpu_data_out} =
 assign ppu_ciram_a10 = (ENABLE_MAPPER_118 & (mapper == 6'b010100) & flags[0]) ? ppu_addr_mapped[17] :
    (mirroring[1] ? mirroring[0] : (mirroring[0] ? ppu_addr_in[11] : ppu_addr_in[10]));
 
-wire [20:13] cpu_addr_mapped = (map_rom_on_6000 & romsel & m2) ? prg_bank_6000 :
+wire [20:13] prg_addr_mapped = (map_rom_on_6000 & romsel & m2) ? prg_bank_6000 :
 (
    prg_mode[2] ? (
       prg_mode[1] ? (            
@@ -236,18 +236,18 @@ begin
       mmc3_irq_reload = 0;
 
    // IRQ for VRC4
-   if (ENABLE_MAPPER_021_022_023_025 & ENABLE_VRC4_INTERRUPTS & (vrc4_irq_cpu_control[1]))
+   if (ENABLE_MAPPER_021_022_023_025 & ENABLE_VRC4_INTERRUPTS & (vrc4_irq_control[1]))
    begin
       reg carry;
       // Cycle mode without prescaler is not used by any games? It's missed in fceux source code.
       /*
-      if (vrc4_irq_cpu_control[2]) // cycle mode
+      if (vrc4_irq_control[2]) // cycle mode
       begin
-         {carry, vrc4_irq_cpu_value[7:0]} = vrc4_irq_cpu_value[7:0] + 1'b1; // just count IRQ value
+         {carry, vrc4_irq_value[7:0]} = vrc4_irq_value[7:0] + 1'b1; // just count IRQ value
          if (carry)
          begin
-            vrc4_irq_cpu_out = 1;
-            vrc4_irq_cpu_value[7:0] = vrc4_irq_cpu_latch[7:0];
+            vrc4_irq_out = 1;
+            vrc4_irq_value[7:0] = vrc4_irq_latch[7:0];
          end
       end else
       */
@@ -258,33 +258,33 @@ begin
             vrc4_irq_prescaler = 0;
             vrc4_irq_prescaler_counter = vrc4_irq_prescaler_counter + 1'b1;
             if (vrc4_irq_prescaler_counter == 2'b11) vrc4_irq_prescaler_counter =  2'b00;
-            {carry, vrc4_irq_cpu_value[7:0]} = vrc4_irq_cpu_value[7:0] + 1'b1;
+            {carry, vrc4_irq_value[7:0]} = vrc4_irq_value[7:0] + 1'b1;
             if (carry)
             begin
-               vrc4_irq_cpu_out = 1;
-               vrc4_irq_cpu_value[7:0] = vrc4_irq_cpu_latch[7:0];
+               vrc4_irq_out = 1;
+               vrc4_irq_value[7:0] = vrc4_irq_latch[7:0];
             end
          end
       end
    end
    
    // IRQ for VRC3
-   if (ENABLE_MAPPER_073 & (vrc3_irq_cpu_control[1]))
+   if (ENABLE_MAPPER_073 & (vrc3_irq_control[1]))
    begin
-      if (vrc3_irq_cpu_control[2])
+      if (vrc3_irq_control[2])
       begin // 8-bit mode
-         vrc3_irq_cpu_value[7:0] = vrc3_irq_cpu_value[7:0] + 1'b1;
-         if (vrc3_irq_cpu_value[7:0] == 0)
+         vrc3_irq_value[7:0] = vrc3_irq_value[7:0] + 1'b1;
+         if (vrc3_irq_value[7:0] == 0)
          begin
-            vrc3_irq_cpu_out = 1;
-            vrc3_irq_cpu_value[7:0] = vrc3_irq_cpu_latch[7:0];
+            vrc3_irq_out = 1;
+            vrc3_irq_value[7:0] = vrc3_irq_latch[7:0];
          end
       end else begin // 16-bit mode
-         vrc3_irq_cpu_value[15:0] = vrc3_irq_cpu_value[15:0] + 1'b1;
-         if (vrc3_irq_cpu_value[15:0] == 0)
+         vrc3_irq_value[15:0] = vrc3_irq_value[15:0] + 1'b1;
+         if (vrc3_irq_value[15:0] == 0)
          begin
-            vrc3_irq_cpu_out = 1;
-            vrc3_irq_cpu_value[15:0] = vrc3_irq_cpu_latch[15:0];
+            vrc3_irq_out = 1;
+            vrc3_irq_value[15:0] = vrc3_irq_latch[15:0];
          end
       end
    end      
@@ -357,9 +357,9 @@ begin
          begin
             case (cpu_addr_in[2:0])
                3'b000: // $5xx0
-                  {cpu_base[26:22]} = cpu_data_in[4:0];                 // CPU base address A26-A22
+                  {prg_base[26:22]} = cpu_data_in[4:0];                 // CPU base address A26-A22
                3'b001: // $5xx1
-                  cpu_base[21:14] = cpu_data_in[7:0];                   // CPU base address A21-A14
+                  prg_base[21:14] = cpu_data_in[7:0];                   // CPU base address A21-A14
                3'b010: // $5xx2
                   prg_mask[20:14] = cpu_data_in[6:0];                   // CPU mask A20-A14
                3'b011: // $5xx3
@@ -850,19 +850,19 @@ begin
          if (ENABLE_MAPPER_073 && (mapper == 6'b010011))
          begin
             case (cpu_addr_in[14:12])
-               3'b000: vrc3_irq_cpu_latch[3:0] = cpu_data_in[3:0]; // $8000-$8FFF
-               3'b001: vrc3_irq_cpu_latch[7:4] = cpu_data_in[3:0]; // $9000-$9FFF
-               3'b010: vrc3_irq_cpu_latch[11:8] = cpu_data_in[3:0]; // $A000-$AFFF
-               3'b011: vrc3_irq_cpu_latch[15:12] = cpu_data_in[3:0]; // $B000-$BFFF
+               3'b000: vrc3_irq_latch[3:0] = cpu_data_in[3:0]; // $8000-$8FFF
+               3'b001: vrc3_irq_latch[7:4] = cpu_data_in[3:0]; // $9000-$9FFF
+               3'b010: vrc3_irq_latch[11:8] = cpu_data_in[3:0]; // $A000-$AFFF
+               3'b011: vrc3_irq_latch[15:12] = cpu_data_in[3:0]; // $B000-$BFFF
                3'b100: begin // $C000-$CFFF
-                     vrc3_irq_cpu_out = 0; // ack
-                     vrc3_irq_cpu_control[2:0] = cpu_data_in[2:0]; // mode, enabled, enabled after ack
-                     if (vrc3_irq_cpu_control[1]) // if E is set
-                        vrc3_irq_cpu_value[15:0] = vrc3_irq_cpu_latch[15:0]; // reload with latch                        
+                     vrc3_irq_out = 0; // ack
+                     vrc3_irq_control[2:0] = cpu_data_in[2:0]; // mode, enabled, enabled after ack
+                     if (vrc3_irq_control[1]) // if E is set
+                        vrc3_irq_value[15:0] = vrc3_irq_latch[15:0]; // reload with latch                        
                   end
                3'b101: begin // $D000-$DFFF
-                     vrc3_irq_cpu_out = 0; // ack
-                     vrc3_irq_cpu_control[1] = vrc3_irq_cpu_control[0];
+                     vrc3_irq_out = 0; // ack
+                     vrc3_irq_control[1] = vrc3_irq_control[0];
                   end
                3'b110: ; // $E000-$EFFF
                3'b111: prg_bank_a[3:1] = cpu_data_in[2:0]; // $F000-$FFFF
@@ -1055,20 +1055,20 @@ begin
                if (cpu_addr_in[14:12] == 3'b111)
                begin
                   case ({flags[0] ? vrc_2b_low : vrc_2b_hi, flags[0] ? vrc_2b_hi : vrc_2b_low}) 
-                     2'b00: vrc4_irq_cpu_latch[3:0] = cpu_data_in[3:0];  // IRQ latch low
-                     2'b01: vrc4_irq_cpu_latch[7:4] = cpu_data_in[3:0];  // IRQ latch hi
+                     2'b00: vrc4_irq_latch[3:0] = cpu_data_in[3:0];  // IRQ latch low
+                     2'b01: vrc4_irq_latch[7:4] = cpu_data_in[3:0];  // IRQ latch hi
                      2'b10: begin // IRQ control
-                        vrc4_irq_cpu_out = 0; // ack
-                        vrc4_irq_cpu_control[2:0] = cpu_data_in[2:0]; // mode, enabled, enabled after ack
-                        if (vrc4_irq_cpu_control[1]) begin // if E is set
+                        vrc4_irq_out = 0; // ack
+                        vrc4_irq_control[2:0] = cpu_data_in[2:0]; // mode, enabled, enabled after ack
+                        if (vrc4_irq_control[1]) begin // if E is set
                            vrc4_irq_prescaler_counter = 2'b00; // reset prescaler
                            vrc4_irq_prescaler = 0;
-                           vrc4_irq_cpu_value[7:0] = vrc4_irq_cpu_latch[7:0]; // reload with latch
+                           vrc4_irq_value[7:0] = vrc4_irq_latch[7:0]; // reload with latch
                         end
                      end
                      2'b11: begin // IRQ ack
-                        vrc4_irq_cpu_out = 0;
-                        vrc4_irq_cpu_control[1] = vrc4_irq_cpu_control[0];
+                        vrc4_irq_out = 0;
+                        vrc4_irq_control[1] = vrc4_irq_control[0];
                      end
                   endcase
                end
