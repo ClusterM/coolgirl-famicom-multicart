@@ -1,6 +1,6 @@
 reg [26:14] prg_base = 0;
 reg [20:14] prg_mask = 7'b1111000;
-reg [17:13] chr_mask = 0;
+reg [18:13] chr_mask = 0;
 reg [2:0] prg_mode = 0;
 reg map_rom_on_6000 = 0;
 reg [7:0] prg_bank_6000 = 0;
@@ -9,14 +9,14 @@ reg [7:0] prg_bank_b = 1;
 reg [7:0] prg_bank_c = 8'b11111110;
 reg [7:0] prg_bank_d = 8'b11111111;
 reg [2:0] chr_mode = 0;
-reg [7:0] chr_bank_a = 0;
-reg [7:0] chr_bank_b = 1;
-reg [7:0] chr_bank_c = 2;
-reg [7:0] chr_bank_d = 3;
-reg [7:0] chr_bank_e = 4;
-reg [7:0] chr_bank_f = 5;
-reg [7:0] chr_bank_g = 6;
-reg [7:0] chr_bank_h = 7;
+reg [8:0] chr_bank_a = 0;
+reg [8:0] chr_bank_b = 1;
+reg [8:0] chr_bank_c = 2;
+reg [8:0] chr_bank_d = 3;
+reg [8:0] chr_bank_e = 4;
+reg [8:0] chr_bank_f = 5;
+reg [8:0] chr_bank_g = 6;
+reg [8:0] chr_bank_h = 7;
 reg [5:0] mapper = 0;
 reg [2:0] flags = 0;
 reg sram_enabled = 0;
@@ -148,7 +148,7 @@ assign {cpu_data_out_enabled, cpu_data_out} =
    ): 9'b000000000;
    
 // Mirroring: 00=vertical, 01=horizontal, 10=1Sa, 11=1Sb
-assign ppu_ciram_a10 = (ENABLE_MAPPER_118 & (mapper == 6'b010100) & flags[0]) ? ppu_addr_mapped[17] :
+assign ppu_ciram_a10 = (ENABLE_MAPPER_118 & (mapper == 6'b010100) & flags[0]) ? chr_addr_mapped[17] :
    (mirroring[1] ? mirroring[0] : (mirroring[0] ? ppu_addr_in[11] : ppu_addr_in[10]));
 
 wire [20:13] prg_addr_mapped = (map_rom_on_6000 & romsel & m2) ? prg_bank_6000 :
@@ -182,7 +182,7 @@ wire [20:13] prg_addr_mapped = (map_rom_on_6000 & romsel & m2) ? prg_bank_6000 :
    )
 );
 
-wire [17:10] ppu_addr_mapped = chr_mode[2] ? (
+wire [18:10] chr_addr_mapped = chr_mode[2] ? (
    chr_mode[1] ? (
       chr_mode[0] ? ( 
          // 111 - 0x400(A)+0x400(B)+0x400(C)+0x400(D)+0x400(E)+0x400(F)+0x400(G)+0x400(H)
@@ -361,13 +361,13 @@ begin
                3'b001: // $5xx1
                   prg_base[21:14] = cpu_data_in[7:0];                   // CPU base address A21-A14
                3'b010: // $5xx2
-                  prg_mask[20:14] = cpu_data_in[6:0];                   // CPU mask A20-A14
+                  {chr_mask[18], prg_mask[20:14]} = cpu_data_in[7:0];   // CHR mask A18, CPU mask A20-A14
                3'b011: // $5xx3
                   {prg_mode[2:0], chr_bank_a[7:3]} = cpu_data_in[7:0];  // PRG mode, direct chr_bank_a access
                3'b100: // $5xx4
                   {chr_mode[2:0], chr_mask[17:13]} = cpu_data_in[7:0];  // CHR mode, CHR mask A17-A13
                3'b101: // $5xx5
-                  {prg_bank_a[5:1], sram_page[1:0]} = cpu_data_in[6:0]; // direct prg_bank_a access, current SRAM page 0-3
+                  {chr_bank_a[8], prg_bank_a[5:1], sram_page[1:0]} = cpu_data_in[7:0]; // direct prg_bank_a access, current SRAM page 0-3
                3'b110: // $5xx6
                   {flags[2:0], mapper[4:0]} = cpu_data_in[7:0];         // some flags, mapper
                3'b111: // $5xx7                                         
@@ -525,7 +525,7 @@ begin
             end
          end
 
-			// Mapper #38
+         // Mapper #38
          if (ENABLE_MAPPER_038 && (mapper == 6'b100000))
          begin
             if (cpu_addr_in[14:12] == 3'b111)
@@ -1147,7 +1147,7 @@ begin
             chr_bank_a[6:3] = cpu_data_in[3:0];
          end
 
-			// Mapper AC-08
+         // Mapper AC-08
          if (ENABLE_MAPPER_AC08 && (mapper == 6'b100001))
          begin
             prg_bank_6000[3:0] = cpu_data_in[4:1];
