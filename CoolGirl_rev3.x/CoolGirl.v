@@ -46,7 +46,7 @@ module CoolGirl # (
    assign sram_addr_out[14:13] = sram_page[1:0];
    assign ppu_addr_out[18:10] = ext_ntram_access 
       ? {7'b1111111, ppu_addr_in[11:10]} 
-      : {{~chr_addr_mapped[18], chr_addr_mapped[17:13]} & ~chr_mask[18:13], chr_addr_mapped[12:10]};
+      : {~(chr_addr_mapped[18] & ~chr_mask[18]), chr_addr_mapped[17:13] & ~chr_mask[17:13], chr_addr_mapped[12:10]};
 
    assign cpu_data_in = cpu_data_out_enabled ? cpu_data_out : 8'bZZZZZZZZ; 
    wire flash_ce_w = ~(~romsel | (m2 & map_rom_on_6000 & cpu_addr_in[14] & cpu_addr_in[13]));

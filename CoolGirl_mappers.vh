@@ -413,7 +413,7 @@ begin
          // Mapper #87
          if (ENABLE_MAPPER_087 && (mapper == 6'b001100))
          begin
-            if (cpu_addr_in[14] & cpu_addr_in[13]) // $6000-$7FFF
+            if (cpu_addr_in[14:13] == 2'b11) // $6000-$7FFF
             begin
                chr_bank_a[4:3] = {cpu_data_in[0], cpu_data_in[1]};
             end
@@ -456,24 +456,24 @@ begin
             if (cpu_addr_in[14:0] == 15'h5117)
                prg_bank_d[4:0] = cpu_data_in[4:0];
             if (cpu_addr_in[14:0] == 15'h5120)
-               chr_bank_a = cpu_data_in;
+               chr_bank_a[7:0] = cpu_data_in[7:0];
             if (cpu_addr_in[14:0] == 15'h5121)
-               chr_bank_b = cpu_data_in;
+               chr_bank_b[7:0] = cpu_data_in[7:0];
             if (cpu_addr_in[14:0] == 15'h5122)
-               chr_bank_c = cpu_data_in;
+               chr_bank_c[7:0] = cpu_data_in[7:0];
             if (cpu_addr_in[14:0] == 15'h5123)
-               chr_bank_d = cpu_data_in;
+               chr_bank_d[7:0] = cpu_data_in[7:0];
             if (cpu_addr_in[14:0] == 15'h5128)
-               chr_bank_e = cpu_data_in;
+               chr_bank_e[7:0] = cpu_data_in[7:0];
             if (cpu_addr_in[14:0] == 15'h5129)
-               chr_bank_f = cpu_data_in;
+               chr_bank_f[7:0] = cpu_data_in[7:0];
             if (cpu_addr_in[14:0] == 15'h512A)
-               chr_bank_g = cpu_data_in;
+               chr_bank_g[7:0] = cpu_data_in[7:0];
             if (cpu_addr_in[14:0] == 15'h512B)
-               chr_bank_h = cpu_data_in;
+               chr_bank_h[7:0] = cpu_data_in[7:0];
             if (cpu_addr_in[14:0] == 15'h5203)
             begin
-               mmc5_irq_line = cpu_data_in;
+               mmc5_irq_line[7:0] = cpu_data_in[7:0];
                mmc5_irq_ack = 1;
             end
             if (cpu_addr_in[14:0] == 15'h5204)
@@ -556,7 +556,8 @@ begin
                if (ENABLE_MAPPER_030 && flags[1])
                begin
                   // One screen mirroring select, CHR RAM bank, PRG ROM bank
-                  {mirroring, chr_bank_a[1:0]} = {1'b1, cpu_data_in[7:6]};
+                  mirroring[1:0] = {1'b1, cpu_data_in[7]};
+                  chr_bank_a[1:0] = cpu_data_in[6:5];
                end                  
             end else begin // CodeMasters, blah. Mirroring control used only by Fire Hawk
                mirroring[1:0] = {1'b1, cpu_data_in[4]};
@@ -631,7 +632,13 @@ begin
                      mapper18_irq_control[3:0] = cpu_data_in[3:0];
                      mapper18_irq_out = 0;
                   end
-               5'b11110: mirroring = cpu_data_in[1:0] ^ {1'b0, ~cpu_data_in[1]}; // $F002
+               5'b11110: 
+                  case (cpu_data_in[1:0])
+                     2'b00: mirroring = 2'b01; // Horz
+                     2'b01: mirroring = 2'b00; // Vert
+                     2'b10: mirroring = 2'b10; // 1SsA
+                     2'b11: mirroring = 2'b11; // 1SsB
+                  endcase
                5'b11111: ; // $F003 - sound
             endcase
          end
@@ -663,7 +670,7 @@ begin
          if (ENABLE_MAPPER_066 && (mapper == 6'b001011))
          begin
             prg_bank_a[3:2] = cpu_data_in[5:4];
-            chr_bank_a[4:3] = cpu_data_in[1:0];             
+            chr_bank_a[4:3] = cpu_data_in[1:0];
          end
          
          // Mapper #90 - JY
@@ -681,14 +688,14 @@ begin
             if (cpu_addr_in[14:12] == 3'b001) // $900x
             begin
                case (cpu_addr_in[2:0])
-                  3'b000: chr_bank_a = cpu_data_in;
-                  3'b001: chr_bank_b = cpu_data_in;
-                  3'b010: chr_bank_c = cpu_data_in;
-                  3'b011: chr_bank_d = cpu_data_in;
-                  3'b100: chr_bank_e = cpu_data_in;
-                  3'b101: chr_bank_f = cpu_data_in;
-                  3'b110: chr_bank_g = cpu_data_in;
-                  3'b111: chr_bank_h = cpu_data_in;
+                  3'b000: chr_bank_a[7:0] = cpu_data_in[7:0]; // $9000
+                  3'b001: chr_bank_b[7:0] = cpu_data_in[7:0]; // $9001
+                  3'b010: chr_bank_c[7:0] = cpu_data_in[7:0]; // $9002
+                  3'b011: chr_bank_d[7:0] = cpu_data_in[7:0]; // $9003
+                  3'b100: chr_bank_e[7:0] = cpu_data_in[7:0]; // $9004
+                  3'b101: chr_bank_f[7:0] = cpu_data_in[7:0]; // $9005
+                  3'b110: chr_bank_g[7:0] = cpu_data_in[7:0]; // $9006
+                  3'b111: chr_bank_h[7:0] = cpu_data_in[7:0]; // $9007
                endcase
             end
             if ({cpu_addr_in[14:12], cpu_addr_in[1:0]} == 5'b10101) // $D001
