@@ -759,14 +759,14 @@ begin
                6'b001101: mapper65_irq_latch[15:8] = cpu_data_in; // $9005, IRQ high value
                6'b001110: mapper65_irq_latch[7:0] = cpu_data_in; // $9006, IRQ low value
                6'b010000: prg_bank_b[5:0] = cpu_data_in[5:0]; // $A000
-               6'b011000: chr_bank_a = cpu_data_in; // $B000
-               6'b011001: chr_bank_b = cpu_data_in; // $B001
-               6'b011010: chr_bank_c = cpu_data_in; // $B002
-               6'b011011: chr_bank_d = cpu_data_in; // $B003
-               6'b011100: chr_bank_e = cpu_data_in; // $B004
-               6'b011101: chr_bank_f = cpu_data_in; // $B005
-               6'b011110: chr_bank_g = cpu_data_in; // $B006
-               6'b011111: chr_bank_h = cpu_data_in; // $B007
+               6'b011000: chr_bank_a[7:0] = cpu_data_in[7:0]; // $B000
+               6'b011001: chr_bank_b[7:0] = cpu_data_in[7:0]; // $B001
+               6'b011010: chr_bank_c[7:0] = cpu_data_in[7:0]; // $B002
+               6'b011011: chr_bank_d[7:0] = cpu_data_in[7:0]; // $B003
+               6'b011100: chr_bank_e[7:0] = cpu_data_in[7:0]; // $B004
+               6'b011101: chr_bank_f[7:0] = cpu_data_in[7:0]; // $B005
+               6'b011110: chr_bank_g[7:0] = cpu_data_in[7:0]; // $B006
+               6'b011111: chr_bank_h[7:0] = cpu_data_in[7:0]; // $B007
                6'b100000: prg_bank_c[5:0] = cpu_data_in[5:0]; // $C000
             endcase
          end
@@ -904,12 +904,12 @@ begin
                end
                3'b001: begin // $8001-$9FFF, odd
                   case (mmc3_internal[2:0])
-                     3'b000: chr_bank_a = cpu_data_in;
-                     3'b001: chr_bank_c = cpu_data_in;
-                     3'b010: chr_bank_e = cpu_data_in;
-                     3'b011: chr_bank_f = cpu_data_in;
-                     3'b100: chr_bank_g = cpu_data_in;
-                     3'b101: chr_bank_h = cpu_data_in;
+                     3'b000: chr_bank_a[7:0] = cpu_data_in[7:0];
+                     3'b001: chr_bank_c[7:0] = cpu_data_in[7:0];
+                     3'b010: chr_bank_e[7:0] = cpu_data_in[7:0];
+                     3'b011: chr_bank_f[7:0] = cpu_data_in[7:0];
+                     3'b100: chr_bank_g[7:0] = cpu_data_in[7:0];
+                     3'b101: chr_bank_h[7:0] = cpu_data_in[7:0];
                      3'b110: if (!ENABLE_MAPPER_189 | ~flags[1]) prg_bank_a[(MMC3_BITSIZE-1):0] = cpu_data_in[(MMC3_BITSIZE-1):0];
                      3'b111: if (!ENABLE_MAPPER_189 | ~flags[1]) prg_bank_b[(MMC3_BITSIZE-1):0] = cpu_data_in[(MMC3_BITSIZE-1):0];
                   endcase
