@@ -28,8 +28,8 @@ reg four_screen = 0;
 reg lockout = 0;  
 
 // Multiplier
-reg [7:0] mul1;
-reg [7:0] mul2;
+reg [7:0] mul1 = 0;
+reg [7:0] mul2 = 0;
 wire [15:0] mul = mul1*mul2;
 
 // IRQ stuff
@@ -40,7 +40,7 @@ assign irq = (
    mapper65_irq_out | 
    vrc4_irq_out | 
    vrc3_irq_out | 
-   fme7_irq_out | 
+   mapper69_irq_out | 
    mapper42_irq_out | 
    mapper90_irq_out) ? 1'b0 : 1'bZ;
 // for MMC3 scanline-based interrupts, counts A12 rises after long A12 falls
@@ -58,26 +58,26 @@ reg [1:0] ppu_nt_read_count;        // nametable read counter
 reg [7:0] scanline = 0;             // current scanline
 reg new_screen = 0;                 // stores 1 when v-blank detected ("in frame" flag)
 reg new_screen_clear = 0;           // flag to clear new_screen flag
-// for scanline-based interrupts, counts dummy PPU reads (MMC5)
+// for MMC5 scanline-based interrupts, counts dummy PPU reads
 reg mmc5_irq_enabled = 0;           // register to enable/disable counter
 reg [7:0] mmc5_irq_line = 0;        // scanline on which IRQ will be triggered
 reg mmc5_irq_ack = 0;               // flag to acknowledge IRQ
 reg mmc5_irq_out = 0;               // stores 1 when IRQ is triggered
 // for mapper #18
-reg [15:0] mapper18_irq_value = 0;  // counter itself (upcounting/downcounting depends on mapper)
+reg [15:0] mapper18_irq_value = 0;  // counter itself (downcounting)
 reg [3:0] mapper18_irq_control = 0; // IRQ settings
 reg [15:0] mapper18_irq_latch = 0;  // stores counter reload latch value
 reg mapper18_irq_out = 0;
 // for mapper #65
-reg  mapper65_irq_enabled = 0;
-reg [15:0] mapper65_irq_value = 0;  // counter itself (upcounting/downcounting depends on mapper)
+reg mapper65_irq_enabled = 0;       // register to enable/disable IRQ
+reg [15:0] mapper65_irq_value = 0;  // counter itself (downcounting)
 reg [15:0] mapper65_irq_latch = 0;  // stores counter reload latch value 
 reg mapper65_irq_out = 0;
 // for Sunsoft FME-7
-reg fme7_irq_enabled = 0;           // register to enable/disable IRQ
-reg fme7_counter_enabled = 0;       // register to enable/disable counter
-reg [15:0] fme7_irq_value = 0;      // counter itself (downcounting)
-reg fme7_irq_out = 0;               // stores 1 when IRQ is triggered
+reg mapper69_irq_enabled = 0;           // register to enable/disable IRQ
+reg mapper69_counter_enabled = 0;       // register to enable/disable counter
+reg [15:0] mapper69_irq_value = 0;      // counter itself (downcounting)
+reg mapper69_irq_out = 0;               // stores 1 when IRQ is triggered
 // for VRC4 CPU-based interrupts
 reg [7:0] vrc4_irq_value = 0;   // counter itself (upcounting)
 reg [2:0] vrc4_irq_control = 0; // IRQ settings
@@ -86,8 +86,8 @@ reg [6:0] vrc4_irq_prescaler = 0;   // prescaler counter for VRC4
 reg [1:0] vrc4_irq_prescaler_counter = 0; // prescaler cicles counter for VRC4
 reg vrc4_irq_out = 0;           // stores 1 when IRQ is triggered
 // for VRC3 CPU-based interrupts
-reg [15:0] vrc3_irq_value = 0;  // counter itself (upcounting/downcounting depends on mapper)
-reg [3:0] vrc3_irq_control = 0; // IRQ settings (individual for different mappers)
+reg [15:0] vrc3_irq_value = 0;  // counter itself (upcounting)
+reg [3:0] vrc3_irq_control = 0; // IRQ settings
 reg [15:0] vrc3_irq_latch = 0;  // stores counter reload latch value
 reg vrc3_irq_out = 0;           // stores 1 when IRQ is triggered
 // for mapper #42 (only Baby Mario)
@@ -110,21 +110,21 @@ reg mapper90_irq_out_clear = 0;     // flag to clear pending flag
 reg ppu_latch0 = 0;
 reg ppu_latch1 = 0;
 // for MMC1
-reg [5:0] mmc1_load_register;
+reg [5:0] mmc1_load_register = 0;
 // for MMC3
-reg [2:0] mmc3_internal;
+reg [2:0] mmc3_internal = 0;
 // for mapper #69
-reg [3:0] mapper69_internal;
+reg [3:0] mapper69_internal = 0;
 // for mapper #112
-reg [2:0] mapper112_internal;
+reg [2:0] mapper112_internal = 0;
 // for mapper #163
-reg mapper_163_latch;
-reg [7:0] mapper163_r0;
-reg [7:0] mapper163_r1;
-reg [7:0] mapper163_r2;
-reg [7:0] mapper163_r3;
-reg [7:0] mapper163_r4;
-reg [7:0] mapper163_r5;
+reg mapper_163_latch = 0;
+reg [7:0] mapper163_r0 = 0;
+reg [7:0] mapper163_r1 = 0;
+reg [7:0] mapper163_r2 = 0;
+reg [7:0] mapper163_r3 = 0;
+reg [7:0] mapper163_r4 = 0;
+reg [7:0] mapper163_r5 = 0;
 // to block two writes in a row 
 reg writed;
 
@@ -253,7 +253,8 @@ begin
       */
       begin // scanline mode
          vrc4_irq_prescaler = vrc4_irq_prescaler + 1'b1; // count prescaler
-         if ((vrc4_irq_prescaler_counter[1] == 0 && vrc4_irq_prescaler == 114) || (vrc4_irq_prescaler_counter[1] == 1 && vrc4_irq_prescaler == 113)) // 114, 114, 113
+         if ((vrc4_irq_prescaler_counter[1] == 0 && vrc4_irq_prescaler == 114) 
+				|| (vrc4_irq_prescaler_counter[1] == 1 && vrc4_irq_prescaler == 113)) // 114, 114, 113
          begin
             vrc4_irq_prescaler = 0;
             vrc4_irq_prescaler_counter = vrc4_irq_prescaler_counter + 1'b1;
@@ -290,10 +291,11 @@ begin
    end      
 
    // IRQ for Sunsoft FME-7
-   if (ENABLE_MAPPER_069 & fme7_counter_enabled)
+   if (ENABLE_MAPPER_069 & mapper69_counter_enabled)
    begin
-      if ((fme7_irq_value[15:0] == 0) & fme7_irq_enabled) fme7_irq_out = 1;
-      fme7_irq_value[15:0] = fme7_irq_value[15:0] - 1'b1;
+		reg carry;
+		{carry, mapper69_irq_value[15:0]} = {1'b0, mapper69_irq_value[15:0]} - 1'b1;
+      if (mapper69_irq_enabled && carry) mapper69_irq_out = 1;
    end      
    
    // Mapper #18 - Sunsoft-2
@@ -303,11 +305,11 @@ begin
       begin
          reg carry;
          {carry, mapper18_irq_value[3:0]} = mapper18_irq_value[3:0] - 1'b1;
-         if (!mapper18_irq_control[3])
+         if (mapper18_irq_control[3] == 1'b0)
             {carry, mapper18_irq_value[7:4]} = mapper18_irq_value[7:4] - carry;
-         if (!mapper18_irq_control[3] && !mapper18_irq_control[2])
+         if (mapper18_irq_control[3:2] == 2'b00)
             {carry, mapper18_irq_value[11:8]} = mapper18_irq_value[11:8] - carry;
-         if (!mapper18_irq_control[3] && !mapper18_irq_control[2] && !mapper18_irq_control[1])
+         if (mapper18_irq_control[3:1] == 3'b000)
             {carry, mapper18_irq_value[15:12]} = mapper18_irq_value[15:12] - carry;
          mapper18_irq_out = mapper18_irq_out | carry;
       end
@@ -432,55 +434,43 @@ begin
          if (ENABLE_MAPPER_005 && (mapper == 6'b001111))
          begin
             // just workaround for Castlevania 3, not real MMC5
-            if (cpu_addr_in[14:0] == 15'h5105) // mirroring
-            begin
-               if (cpu_data_in == 8'b11111111)
-                  four_screen = 1;
-               else begin
-                  four_screen = 0;
-                  case ({cpu_data_in[4], cpu_data_in[2]})
-                     2'b00: mirroring = 2'b10;
-                     2'b01: mirroring = 2'b00;
-                     2'b10: mirroring = 2'b01;
-                     2'b11: mirroring = 2'b11;
-                  endcase
+            case (cpu_addr_in[14:0])
+               15'h5105: begin // mirroring
+                  if (cpu_data_in == 8'b11111111)
+                     four_screen = 1;
+                  else begin
+                     four_screen = 0;
+                     case ({cpu_data_in[4], cpu_data_in[2]})
+                        2'b00: mirroring = 2'b10;
+                        2'b01: mirroring = 2'b00;
+                        2'b10: mirroring = 2'b01;
+                        2'b11: mirroring = 2'b11;
+                     endcase
+                  end
                end
-            end
-            if (cpu_addr_in[14:0] == 15'h5115) 
-            begin
-               prg_bank_a[4:0] = {cpu_data_in[4:1], 1'b0};
-               prg_bank_b[4:0] = {cpu_data_in[4:1], 1'b1};
-            end
-            if (cpu_addr_in[14:0] == 15'h5116)
-               prg_bank_c[4:0] = cpu_data_in[4:0];
-            if (cpu_addr_in[14:0] == 15'h5117)
-               prg_bank_d[4:0] = cpu_data_in[4:0];
-            if (cpu_addr_in[14:0] == 15'h5120)
-               chr_bank_a[7:0] = cpu_data_in[7:0];
-            if (cpu_addr_in[14:0] == 15'h5121)
-               chr_bank_b[7:0] = cpu_data_in[7:0];
-            if (cpu_addr_in[14:0] == 15'h5122)
-               chr_bank_c[7:0] = cpu_data_in[7:0];
-            if (cpu_addr_in[14:0] == 15'h5123)
-               chr_bank_d[7:0] = cpu_data_in[7:0];
-            if (cpu_addr_in[14:0] == 15'h5128)
-               chr_bank_e[7:0] = cpu_data_in[7:0];
-            if (cpu_addr_in[14:0] == 15'h5129)
-               chr_bank_f[7:0] = cpu_data_in[7:0];
-            if (cpu_addr_in[14:0] == 15'h512A)
-               chr_bank_g[7:0] = cpu_data_in[7:0];
-            if (cpu_addr_in[14:0] == 15'h512B)
-               chr_bank_h[7:0] = cpu_data_in[7:0];
-            if (cpu_addr_in[14:0] == 15'h5203)
-            begin
-               mmc5_irq_line[7:0] = cpu_data_in[7:0];
-               mmc5_irq_ack = 1;
-            end
-            if (cpu_addr_in[14:0] == 15'h5204)
-            begin
-               mmc5_irq_enabled = cpu_data_in[7];
-               //mmc5_irq_ack = 1;
-            end
+               15'h5115: begin
+                  prg_bank_a[4:0] = {cpu_data_in[4:1], 1'b0};
+                  prg_bank_b[4:0] = {cpu_data_in[4:1], 1'b1};
+               end
+               15'h5116: prg_bank_c[4:0] = cpu_data_in[4:0];
+               15'h5117: prg_bank_d[4:0] = cpu_data_in[4:0];
+               15'h5120: chr_bank_a[7:0] = cpu_data_in[7:0];
+               15'h5121: chr_bank_b[7:0] = cpu_data_in[7:0];
+               15'h5122: chr_bank_c[7:0] = cpu_data_in[7:0];
+               15'h5123: chr_bank_d[7:0] = cpu_data_in[7:0];
+               15'h5128: chr_bank_e[7:0] = cpu_data_in[7:0];
+               15'h5129: chr_bank_f[7:0] = cpu_data_in[7:0];
+               15'h512A: chr_bank_g[7:0] = cpu_data_in[7:0];
+               15'h512B: chr_bank_h[7:0] = cpu_data_in[7:0];
+               15'h5203: begin
+                  mmc5_irq_ack = 1;
+                  mmc5_irq_line[7:0] = cpu_data_in[7:0];
+               end
+               15'h5204: begin
+                  mmc5_irq_ack = 1;
+                  mmc5_irq_enabled = cpu_data_in[7];
+               end
+            endcase
          end
          
          // Mapper #189
@@ -749,12 +739,12 @@ begin
                6'b000000: prg_bank_a[5:0] = cpu_data_in[5:0]; // $8000
                6'b001001: mirroring = {1'b0, cpu_data_in[7]}; // $9001, mirroring
                6'b001011: begin
-                     mapper65_irq_enabled = cpu_data_in[7]; // $9003, enable IRQ
                      mapper65_irq_out = 0; // ack
+                     mapper65_irq_enabled = cpu_data_in[7]; // $9003, enable IRQ
                   end
                6'b001100: begin
-                     mapper65_irq_value = mapper65_irq_latch; // $9004, IRQ reload
                      mapper65_irq_out = 0; // ack
+                     mapper65_irq_value = mapper65_irq_latch; // $9004, IRQ reload
                   end
                6'b001101: mapper65_irq_latch[15:8] = cpu_data_in; // $9005, IRQ high value
                6'b001110: mapper65_irq_latch[7:0] = cpu_data_in; // $9006, IRQ low value
@@ -791,11 +781,11 @@ begin
                         if (mmc1_load_register[4:3] == 2'b11)
                         begin
                            prg_mode = 3'b000;   // 0x4000 (A) + fixed last (C)
-                           prg_bank_c[4:0] = 5'b11110;
+                           prg_bank_c[4:1] = 4'b1111;
                         end else if (mmc1_load_register[4:3] == 2'b10)
                         begin
                            prg_mode = 3'b001;   // fixed first (C) + 0x4000 (A)
-                           prg_bank_c[4:0] = 5'b00000;
+                           prg_bank_c[4:1] = 4'b0000;
                         end else                   
                            prg_mode = 3'b111;   // 0x8000 (A)
                         if (mmc1_load_register[5])
@@ -865,7 +855,7 @@ begin
                      vrc3_irq_out = 0; // ack
                      vrc3_irq_control[2:0] = cpu_data_in[2:0]; // mode, enabled, enabled after ack
                      if (vrc3_irq_control[1]) // if E is set
-                        vrc3_irq_value[15:0] = vrc3_irq_latch[15:0]; // reload with latch                        
+                        vrc3_irq_value[15:0] = vrc3_irq_latch[15:0]; // reload with latch
                   end
                3'b101: begin // $D000-$DFFF
                      vrc3_irq_out = 0; // ack
@@ -933,12 +923,12 @@ begin
                   case (mapper112_internal[2:0])
                      3'b000: prg_bank_a[5:0] = cpu_data_in[5:0];
                      3'b001: prg_bank_b[5:0] = cpu_data_in[5:0];
-                     3'b010: chr_bank_a = cpu_data_in;
-                     3'b011: chr_bank_c = cpu_data_in;
-                     3'b100: chr_bank_e = cpu_data_in;
-                     3'b101: chr_bank_f = cpu_data_in;
-                     3'b110: chr_bank_g = cpu_data_in;
-                     3'b111: chr_bank_h = cpu_data_in;
+                     3'b010: chr_bank_a[7:0] = cpu_data_in[7:0];
+                     3'b011: chr_bank_c[7:0] = cpu_data_in[7:0];
+                     3'b100: chr_bank_e[7:0] = cpu_data_in[7:0];
+                     3'b101: chr_bank_f[7:0] = cpu_data_in[7:0];
+                     3'b110: chr_bank_g[7:0] = cpu_data_in[7:0];
+                     3'b111: chr_bank_h[7:0] = cpu_data_in[7:0];
                   endcase
                end
                2'b10: ; // $C000-$DFFF
@@ -957,15 +947,15 @@ begin
                      mirroring = {1'b0, cpu_data_in[6]};
                end
                4'b0001: prg_bank_b[5:0] = cpu_data_in[5:0]; // $8001, PRG Reg 1 (8k @ $A000)
-               4'b0010: chr_bank_a = {cpu_data_in[6:0], 1'b0};  // $8002, CHR Reg 0 (2k @ $0000)
-               4'b0011: chr_bank_c = {cpu_data_in[6:0], 1'b0};  // $8003, CHR Reg 1 (2k @ $0800)
-               4'b0100: chr_bank_e = cpu_data_in;  // $A000, CHR Reg 2 (1k @ $1000)
-               4'b0101: chr_bank_f = cpu_data_in; // $A001, CHR Reg 2 (1k @ $1400)
-               4'b0110: chr_bank_g = cpu_data_in; // $A002, CHR Reg 2 (1k @ $1800)
-               4'b0111: chr_bank_h = cpu_data_in; // $A003, CHR Reg 2 (1k @ $1C00)
+               4'b0010: chr_bank_a[7:1] = cpu_data_in[6:0]; // $8002, CHR Reg 0 (2k @ $0000)
+               4'b0011: chr_bank_c[7:1] = cpu_data_in[6:0]; // $8003, CHR Reg 1 (2k @ $0800)
+               4'b0100: chr_bank_e[7:0] = cpu_data_in[7:0]; // $A000, CHR Reg 2 (1k @ $1000)
+               4'b0101: chr_bank_f[7:0] = cpu_data_in[7:0]; // $A001, CHR Reg 2 (1k @ $1400)
+               4'b0110: chr_bank_g[7:0] = cpu_data_in[7:0]; // $A002, CHR Reg 2 (1k @ $1800)
+               4'b0111: chr_bank_h[7:0] = cpu_data_in[7:0]; // $A003, CHR Reg 2 (1k @ $1C00)
                4'b1100: if (flags[0]) mirroring = {1'b0, cpu_data_in[6]};  // $E000, mirroring, for mapper #48
             endcase
-            if (ENABLE_MAPPER_048_INTERRUPTS)
+            if (ENABLE_MAPPER_048_INTERRUPTS & flags[0])
             begin
                case ({cpu_addr_in[14:13], cpu_addr_in[1:0]})
                   4'b1000: mmc3_irq_latch = ~cpu_data_in; // $C000, IRQ latch
@@ -1006,7 +996,9 @@ begin
                5'b00010,
                5'b00011: prg_bank_a[4:0] = cpu_data_in[4:0];  // $8000-$8003, PRG0
                5'b00100,
-               5'b00101: if (cpu_data_in != 8'b11111111) mirroring = cpu_data_in[1:0]; // $9000-$9001, mirroring
+               5'b00101: // VRC2-using games are usually well-behaved and only write 0 or 1 to this register,
+                         // but Wai Wai World in one instance writes $FF instead
+                         if (cpu_data_in != 8'b11111111) mirroring = cpu_data_in[1:0]; // $9000-$9001, mirroring
                5'b00110,
                5'b00111: prg_mode[0] = cpu_data_in[1]; // $9002-$9004, PRG swap
                5'b01000,
@@ -1039,21 +1031,21 @@ begin
                case ({cpu_addr_in[14:12], flags[0] ? vrc_2b_low : vrc_2b_hi, flags[0] ? vrc_2b_hi : vrc_2b_low})
                   // VRC2a
                   5'b01100: chr_bank_a[2:0] = cpu_data_in[3:1];  // $B000, CHR0 low
-                  5'b01101: chr_bank_a[7:3] = {1'b0, cpu_data_in[3:0]};  // $B001, CHR0 hi
+                  5'b01101: chr_bank_a[7:3] = cpu_data_in[3:0];  // $B001, CHR0 hi
                   5'b01110: chr_bank_b[2:0] = cpu_data_in[3:1];  // $B002, CHR1 low
-                  5'b01111: chr_bank_b[7:3] = {1'b0, cpu_data_in[3:0]};  // $B003, CHR1 hi
+                  5'b01111: chr_bank_b[7:3] = cpu_data_in[3:0];  // $B003, CHR1 hi
                   5'b10000: chr_bank_c[2:0] = cpu_data_in[3:1];  // $C000, CHR2 low
-                  5'b10001: chr_bank_c[7:3] = {1'b0, cpu_data_in[3:0]};  // $C001, CHR2 hi
+                  5'b10001: chr_bank_c[7:3] = cpu_data_in[3:0];  // $C001, CHR2 hi
                   5'b10010: chr_bank_d[2:0] = cpu_data_in[3:1];  // $C002, CHR3 low
-                  5'b10011: chr_bank_d[7:3] = {1'b0, cpu_data_in[3:0]};  // $C003, CHR3 hi
+                  5'b10011: chr_bank_d[7:3] = cpu_data_in[3:0];  // $C003, CHR3 hi
                   5'b10100: chr_bank_e[2:0] = cpu_data_in[3:1];  // $D000, CHR4 low
-                  5'b10101: chr_bank_e[7:3] = {1'b0, cpu_data_in[3:0]};  // $D001, CHR4 hi
+                  5'b10101: chr_bank_e[7:3] = cpu_data_in[3:0];  // $D001, CHR4 hi
                   5'b10110: chr_bank_f[2:0] = cpu_data_in[3:1];  // $D002, CHR5 low
-                  5'b10111: chr_bank_f[7:3] = {1'b0, cpu_data_in[3:0]};  // $D003, CHR5 hi
+                  5'b10111: chr_bank_f[7:3] = cpu_data_in[3:0];  // $D003, CHR5 hi
                   5'b11000: chr_bank_g[2:0] = cpu_data_in[3:1];  // $E000, CHR6 low
-                  5'b11001: chr_bank_g[7:3] = {1'b0, cpu_data_in[3:0]};  // $E001, CHR6 hi
+                  5'b11001: chr_bank_g[7:3] = cpu_data_in[3:0];  // $E001, CHR6 hi
                   5'b11010: chr_bank_h[2:0] = cpu_data_in[3:1];  // $E002, CHR7 low
-                  5'b11011: chr_bank_h[7:3] = {1'b0, cpu_data_in[3:0]};  // $E003, CHR7 hi
+                  5'b11011: chr_bank_h[7:3] = cpu_data_in[3:0];  // $E003, CHR7 hi
                endcase
             end
                
@@ -1068,8 +1060,8 @@ begin
                         vrc4_irq_out = 0; // ack
                         vrc4_irq_control[2:0] = cpu_data_in[2:0]; // mode, enabled, enabled after ack
                         if (vrc4_irq_control[1]) begin // if E is set
-                           vrc4_irq_prescaler_counter = 2'b00; // reset prescaler
-                           vrc4_irq_prescaler = 0;
+                           vrc4_irq_prescaler_counter[1:0] = 2'b00; // reset prescaler
+                           vrc4_irq_prescaler[6:0] = 7'b0000000;
                            vrc4_irq_value[7:0] = vrc4_irq_latch[7:0]; // reload with latch
                         end
                      end
@@ -1092,25 +1084,26 @@ begin
             if (cpu_addr_in[14:13] == 2'b01)
             begin
                case (mapper69_internal[3:0])
-                  4'b0000: chr_bank_a = cpu_data_in; // CHR0
-                  4'b0001: chr_bank_b = cpu_data_in; // CHR1
-                  4'b0010: chr_bank_c = cpu_data_in; // CHR2
-                  4'b0011: chr_bank_d = cpu_data_in; // CHR3
-                  4'b0100: chr_bank_e = cpu_data_in; // CHR4
-                  4'b0101: chr_bank_f = cpu_data_in; // CHR5
-                  4'b0110: chr_bank_g = cpu_data_in; // CHR6
-                  4'b0111: chr_bank_h = cpu_data_in; // CHR7
+                  4'b0000: chr_bank_a[7:0] = cpu_data_in[7:0]; // CHR0
+                  4'b0001: chr_bank_b[7:0] = cpu_data_in[7:0]; // CHR1
+                  4'b0010: chr_bank_c[7:0] = cpu_data_in[7:0]; // CHR2
+                  4'b0011: chr_bank_d[7:0] = cpu_data_in[7:0]; // CHR3
+                  4'b0100: chr_bank_e[7:0] = cpu_data_in[7:0]; // CHR4
+                  4'b0101: chr_bank_f[7:0] = cpu_data_in[7:0]; // CHR5
+                  4'b0110: chr_bank_g[7:0] = cpu_data_in[7:0]; // CHR6
+                  4'b0111: chr_bank_h[7:0] = cpu_data_in[7:0]; // CHR7
                   4'b1000: {sram_enabled, map_rom_on_6000, prg_bank_6000[5:0]} = {cpu_data_in[7], ~cpu_data_in[6], cpu_data_in[5:0]}; // PRG0
                   4'b1001: prg_bank_a[5:0] = cpu_data_in[5:0]; // PRG1
                   4'b1010: prg_bank_b[5:0] = cpu_data_in[5:0]; // PRG2
                   4'b1011: prg_bank_c[5:0] = cpu_data_in[5:0]; // PRG3
                   4'b1100: mirroring[1:0] = cpu_data_in[1:0]; // mirroring
                   4'b1101: begin
-                     {fme7_counter_enabled, fme7_irq_enabled} = {cpu_data_in[7], cpu_data_in[0]}; // IRQ control
-                     fme7_irq_out = 0; // ack
+                     mapper69_irq_out = 0; // ack
+                     mapper69_counter_enabled = cpu_data_in[7];
+							mapper69_irq_enabled = cpu_data_in[0];
                   end
-                  4'b1110: fme7_irq_value[7:0] = cpu_data_in; // IRQ low
-                  4'b1111: fme7_irq_value[15:8] = cpu_data_in; // IRQ high
+                  4'b1110: mapper69_irq_value[7:0] = cpu_data_in[7:0]; // IRQ low
+                  4'b1111: mapper69_irq_value[15:8] = cpu_data_in[7:0]; // IRQ high
                endcase
             end                  
          end
@@ -1124,14 +1117,14 @@ begin
                2'b10: prg_bank_b[5:0] = cpu_data_in[5:0]; // PRG1
                2'b11: begin
                   case (cpu_addr_in[2:0]) // CHR regs
-                     3'b000: chr_bank_a = cpu_data_in;
-                     3'b001: chr_bank_b = cpu_data_in;
-                     3'b010: chr_bank_c = cpu_data_in;
-                     3'b011: chr_bank_d = cpu_data_in;
-                     3'b100: chr_bank_e = cpu_data_in;
-                     3'b101: chr_bank_f = cpu_data_in;
-                     3'b110: chr_bank_g = cpu_data_in;
-                     3'b111: chr_bank_h = cpu_data_in;
+                     3'b000: chr_bank_a[7:0] = cpu_data_in[7:0];
+                     3'b001: chr_bank_b[7:0] = cpu_data_in[7:0];
+                     3'b010: chr_bank_c[7:0] = cpu_data_in[7:0];
+                     3'b011: chr_bank_d[7:0] = cpu_data_in[7:0];
+                     3'b100: chr_bank_e[7:0] = cpu_data_in[7:0];
+                     3'b101: chr_bank_f[7:0] = cpu_data_in[7:0];
+                     3'b110: chr_bank_g[7:0] = cpu_data_in[7:0];
+                     3'b111: chr_bank_h[7:0] = cpu_data_in[7:0];
                   endcase
                end
             endcase
