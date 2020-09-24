@@ -1111,12 +1111,12 @@ begin
          // Mapper #32 - IREM G-101
          if (ENABLE_MAPPER_032 && (mapper == 6'b011010))
          begin
-            case (cpu_addr_in[13:12])
-               2'b00: prg_bank_a[5:0] = cpu_data_in[5:0]; // PRG0
-               2'b01: {prg_mode[0], mirroring} = {cpu_data_in[1], 1'b0, cpu_data_in[0]}; // PRG mode, mirroring
-               2'b10: prg_bank_b[5:0] = cpu_data_in[5:0]; // PRG1
-               2'b11: begin
-                  case (cpu_addr_in[2:0]) // CHR regs
+            case (cpu_addr_in[14:12])
+               3'b000: prg_bank_a[5:0] = cpu_data_in[5:0]; // $8000-$8FFF, PRG0
+               3'b001: {prg_mode[0], mirroring} = {cpu_data_in[1], 1'b0, cpu_data_in[0]}; // $9000-$9FFF, PRG mode, mirroring
+               3'b010: prg_bank_b[5:0] = cpu_data_in[5:0]; // $A000-$AFFF, PRG1
+               3'b011: begin // $B000-$BFFF, CHR regs
+                  case (cpu_addr_in[2:0])
                      3'b000: chr_bank_a[7:0] = cpu_data_in[7:0];
                      3'b001: chr_bank_b[7:0] = cpu_data_in[7:0];
                      3'b010: chr_bank_c[7:0] = cpu_data_in[7:0];
