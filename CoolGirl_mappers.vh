@@ -254,7 +254,7 @@ begin
       begin // scanline mode
          vrc4_irq_prescaler = vrc4_irq_prescaler + 1'b1; // count prescaler
          if ((vrc4_irq_prescaler_counter[1] == 0 && vrc4_irq_prescaler == 114) 
-				|| (vrc4_irq_prescaler_counter[1] == 1 && vrc4_irq_prescaler == 113)) // 114, 114, 113
+            || (vrc4_irq_prescaler_counter[1] == 1 && vrc4_irq_prescaler == 113)) // 114, 114, 113
          begin
             vrc4_irq_prescaler = 0;
             vrc4_irq_prescaler_counter = vrc4_irq_prescaler_counter + 1'b1;
@@ -293,8 +293,8 @@ begin
    // IRQ for Sunsoft FME-7
    if (ENABLE_MAPPER_069 & mapper69_counter_enabled)
    begin
-		reg carry;
-		{carry, mapper69_irq_value[15:0]} = {1'b0, mapper69_irq_value[15:0]} - 1'b1;
+      reg carry;
+      {carry, mapper69_irq_value[15:0]} = {1'b0, mapper69_irq_value[15:0]} - 1'b1;
       if (mapper69_irq_enabled && carry) mapper69_irq_out = 1;
    end      
    
@@ -1100,7 +1100,7 @@ begin
                   4'b1101: begin
                      mapper69_irq_out = 0; // ack
                      mapper69_counter_enabled = cpu_data_in[7];
-							mapper69_irq_enabled = cpu_data_in[0];
+                     mapper69_irq_enabled = cpu_data_in[0];
                   end
                   4'b1110: mapper69_irq_value[7:0] = cpu_data_in[7:0]; // IRQ low
                   4'b1111: mapper69_irq_value[15:8] = cpu_data_in[7:0]; // IRQ high
@@ -1152,6 +1152,23 @@ begin
          begin
             prg_bank_6000[3:0] = cpu_data_in[4:1];
             map_rom_on_6000 = 1;
+         end
+         
+			// Mapper #75 - VRC1
+         if (ENABLE_MAPPER_075 && (mapper == 6'b100010))
+         begin
+            case (cpu_addr_in[14:12])
+               3'b000: prg_bank_a[3:0] = cpu_data_in[3:0]; // $8000-$8FFF
+               3'b001: begin  // $9000-$9FFF
+                           mirroring = {1'b0, cpu_data_in[0]};
+                           chr_bank_a[6] = cpu_data_in[1];
+                           chr_bank_e[6] = cpu_data_in[2];
+                       end
+               3'b010: prg_bank_b[3:0] = cpu_data_in[3:0]; // $A000-$AFFF
+               3'b100: prg_bank_c[3:0] = cpu_data_in[3:0]; // $C000-$CFFF
+               3'b110: chr_bank_a[5:2] = cpu_data_in[3:0]; // $E000-$EFFF
+               3'b111: chr_bank_e[5:2] = cpu_data_in[3:0]; // $F000-$FFFF
+            endcase
          end
       end // romsel
    end // write
