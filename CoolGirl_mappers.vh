@@ -96,7 +96,7 @@ reg [14:0] mapper42_irq_value = 0;  // counter itself (upcounting)
 wire mapper42_irq_out = mapper42_irq_value[14] & mapper42_irq_value[13];
 // for mapper #90, unfiltered PPU A12 counter
 reg mapper90_irq_enabled = 0;       // register to enable/disable counter
-//reg [7:0] mapper90_xor;             // XOR register (is not used actually)
+reg [7:0] mapper90_xor;             // XOR register (is not used actually)
 reg [10:0] mapper90_irq_latch = 0;   // stores counter reload latch value
 reg [10:0] mapper90_irq_counter = 0; // counter itself (downcounting)
 reg mapper90_irq_reload = 0;        // flag to reload counter and prescaler from latch
@@ -700,14 +700,14 @@ begin
                      3'b010: mapper90_irq_enabled = 0;
                      3'b011: mapper90_irq_enabled = 1;
                      3'b100: begin
-                           mapper90_irq_latch[2:0] = cpu_data_in[2:0]; // ^ mapper90_xor[2:0];
+                           mapper90_irq_latch[2:0] = cpu_data_in[2:0] ^ mapper90_xor[2:0];
                            mapper90_irq_reload = 1;
                         end
                      3'b101: begin
-                           mapper90_irq_latch[10:3] = cpu_data_in; // ^ mapper90_xor;
+                           mapper90_irq_latch[10:3] = cpu_data_in ^ mapper90_xor;
                            mapper90_irq_reload = 1;
                         end
-                     3'b110: ;//mapper90_xor = cpu_data_in;
+                     3'b110: mapper90_xor = cpu_data_in;
                      3'b111: ;                        
                   endcase
                end
@@ -722,10 +722,10 @@ begin
                      3'b011: mmc3_irq_enabled = 1;
                      3'b100: ;
                      3'b101: begin
-                           mmc3_irq_latch = cpu_data_in; // ^ mapper90_xor;
+                           mmc3_irq_latch = cpu_data_in ^ mapper90_xor;
                            mmc3_irq_reload = 1;
                         end
-                     3'b110: ;//mapper90_xor = cpu_data_in;
+                     3'b110: mapper90_xor = cpu_data_in;
                      3'b111: ;                        
                   endcase
                end
