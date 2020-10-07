@@ -906,6 +906,7 @@ begin
                end
                3'b010: if (!ENABLE_MAPPER_206 | ~flags[2]) // disabled for mapper #206
                            mirroring = {1'b0, cpu_data_in[0]}; // $A000-$BFFE, even (mirroring)
+					3'b011: ; // RAM protect... no
                3'b100: mmc3_irq_latch = cpu_data_in; // $C000-$DFFE, even (IRQ latch)
                3'b101: mmc3_irq_reload = 1; // $C001-$DFFF, odd
                3'b110: mmc3_irq_enabled = 0; // $E000-$FFFE, even
