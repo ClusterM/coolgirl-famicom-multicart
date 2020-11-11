@@ -53,7 +53,7 @@ reg mmc3_irq_reload_clear = 0;      // flag to clear reload flag
 reg mmc3_irq_ready = 0;             // stores 1 when IRQ is ready (enabled and non-zero)
 reg mmc3_irq_out = 0;               // stores 1 when IRQ is triggered
 // scanline counter, counts dummy PPU reads, detects v-blank automatically
-reg [3:0] ppu_rd_hi_time = 0;       // counts how log there is no reads from PPU to detect v-blank
+reg [3:0] ppu_rd_hi_time = 0;       // counts how long there is no reads from PPU to detect v-blank
 reg [1:0] ppu_nt_read_count;        // nametable read counter
 reg [7:0] scanline = 0;             // current scanline
 reg new_screen = 0;                 // stores 1 when v-blank detected ("in frame" flag)
