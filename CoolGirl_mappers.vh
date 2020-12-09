@@ -133,7 +133,7 @@ wire [7:0] cpu_data_out;
 assign {cpu_data_out_enabled, cpu_data_out} = 
    (m2 & romsel & cpu_rw_in) ?
    (
-      ((mapper == 0) && (cpu_addr_in[14:12] == 3'b101)) ? {8'b10000000, new_dendy} :
+      ((mapper == 0) && (cpu_addr_in[14:12] == 3'b101)) ? {8'b10000000, new_dendy} : // $5000 - $5FFF - new dendy flag
       (ENABLE_MAPPER_163 && (mapper == 6'b000110) && ({cpu_addr_in[14:12],cpu_addr_in[10:8]} == 6'b101001)) ? 
             {1'b1, mapper163_r2 | mapper163_r0 | mapper163_r1 | ~mapper163_r3} :
       (ENABLE_MAPPER_163 && (mapper == 6'b000110) && ({cpu_addr_in[14:12],cpu_addr_in[10:8]} == 6'b101101)) ? 
