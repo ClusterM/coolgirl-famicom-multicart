@@ -17,7 +17,7 @@ parameter ENABLE_MAPPER_042_INTERRUPTS = 0,  // mapper #042 interrupts: for Mari
 parameter ENABLE_MAPPER_065 = 1,             // mapper #065 - Irem's H3001
 parameter ENABLE_MAPPER_066 = 1,             // mapper #066 - GxROM
 parameter ENABLE_MAPPER_069 = 1,             // mapper #069 - Sunsoft FME-7
-parameter ENABLE_MAPPER_070 = 0,             // mapper #070 - Bandai: Family Trainer, Kamen Rider Club, Space Shadow
+parameter ENABLE_MAPPER_070 = 1,             // mapper #070 - Bandai: Family Trainer, Kamen Rider Club, Space Shadow
 parameter ENABLE_MAPPER_071 = 1,             // mapper #071 - Camerica: for Fire Hawk only
 parameter ENABLE_MAPPER_073 = 0,             // mapper #073 - VRC3
 parameter ENABLE_MAPPER_075 = 0,             // mapper #075 - VRC1
@@ -38,7 +38,7 @@ parameter ENABLE_MAPPER_184 = 0,             // mapper #184
 parameter ENABLE_MAPPER_189 = 1,             // mapper #189 - TXC
 parameter ENABLE_MAPPER_206 = 0,             // mapper #206 - the simpler predecessor of the MMC3
 parameter ENABLE_MAPPER_228 = 0,             // mapper #228 - Action52: Cheetahmen II only
-parameter ENABLE_MAPPER_AC08 = 0,            // mapper AC-08: Green Beret FDS conversion
+parameter ENABLE_MAPPER_AC08 = 1,            // mapper AC-08: Green Beret FDS conversion
 
 parameter ENABLE_FOUR_SCREEN = 1,            // Enable four-screen support, required by some games
 parameter UxROM_BITSIZE = 4,                 // Maximum size for UxROM PRG (3=256KB - standard size, 4=512KB - required for some hacks/homebrew)
