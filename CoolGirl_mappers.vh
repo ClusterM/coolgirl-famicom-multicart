@@ -485,15 +485,16 @@ begin
             end
          end
 
-         // Mapper #113 - NINA-03/06
-         if (ENABLE_MAPPER_113 && (mapper == 6'b011011))
+         // Mappers NINA-03/06 and Sachen 3015: #113 (flag0 = 0), #79 and #146 (flag0 = 1)
+         if (ENABLE_MAPPER_079_113_146 && (mapper == 6'b011011))
          begin
             if ({cpu_addr_in[14:13], cpu_addr_in[8]} == 3'b101)
             begin
                // That is, $4100-$41FF, $4300-$43FF, $45xx, $47xx, ..., $5Dxx, and $5Fxx.
                chr_bank_a[5:3] <= cpu_data_in[2:0];
                prg_bank_a[4:2] <= cpu_data_in[5:3];
-               mirroring <= {1'b0, ~cpu_data_in[7]};
+               if (!flags[0])
+                   mirroring <= {1'b0, ~cpu_data_in[7]};
             end
          end
 
@@ -908,7 +909,7 @@ begin
                end
                3'b010: if (!ENABLE_MAPPER_206 | ~flags[2]) // disabled for mapper #206
                            mirroring <= {1'b0, cpu_data_in[0]}; // $A000-$BFFE, even (mirroring)
-					3'b011: ; // RAM protect... no
+               3'b011: ; // RAM protect... no
                3'b100: mmc3_irq_latch <= cpu_data_in; // $C000-$DFFE, even (IRQ latch)
                3'b101: mmc3_irq_reload <= 1; // $C001-$DFFF, odd
                3'b110: mmc3_irq_enabled <= 0; // $E000-$FFFE, even
@@ -1157,7 +1158,7 @@ begin
             map_rom_on_6000 <= 1;
          end
 
-			// Mapper #75 - VRC1
+         // Mapper #75 - VRC1
          if (ENABLE_MAPPER_075 && (mapper == 6'b100010))
          begin
             case (cpu_addr_in[14:12])
