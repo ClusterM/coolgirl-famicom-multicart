@@ -235,7 +235,7 @@ always @ (negedge m2)
 begin
    // for MMC3
    if (mmc3_irq_reload_clear)
-      mmc3_irq_reload = 0;
+      mmc3_irq_reload <= 0;
 
    // IRQ for VRC4
    if (ENABLE_MAPPER_021_022_023_025 & ENABLE_VRC4_INTERRUPTS & (vrc4_irq_control[1]))
@@ -279,14 +279,14 @@ begin
          vrc3_irq_value[7:0] = vrc3_irq_value[7:0] + 1'b1;
          if (vrc3_irq_value[7:0] == 0)
          begin
-            vrc3_irq_out = 1;
+            vrc3_irq_out <= 1;
             vrc3_irq_value[7:0] = vrc3_irq_latch[7:0];
          end
       end else begin // 16-bit mode
          vrc3_irq_value[15:0] = vrc3_irq_value[15:0] + 1'b1;
          if (vrc3_irq_value[15:0] == 0)
          begin
-            vrc3_irq_out = 1;
+            vrc3_irq_out <= 1;
             vrc3_irq_value[15:0] = vrc3_irq_latch[15:0];
          end
       end
@@ -313,7 +313,7 @@ begin
             {carry, mapper18_irq_value[11:8]} = mapper18_irq_value[11:8] - carry;
          if (mapper18_irq_control[3:1] == 3'b000)
             {carry, mapper18_irq_value[15:12]} = mapper18_irq_value[15:12] - carry;
-         mapper18_irq_out = mapper18_irq_out | carry;
+         mapper18_irq_out <= mapper18_irq_out | carry;
       end
    end
 
@@ -325,7 +325,7 @@ begin
          if (mapper65_irq_value[15:0] != 0)
          begin
             mapper65_irq_value[15:0] = mapper65_irq_value[15:0] - 1'b1;
-            if (mapper65_irq_value[15:0] == 0) mapper65_irq_out = 1;
+            if (mapper65_irq_value[15:0] == 0) mapper65_irq_out <= 1;
          end
       end
    end
@@ -725,8 +725,8 @@ begin
                      3'b011: mmc3_irq_enabled <= 1;
                      3'b100: ;
                      3'b101: begin
-                           mmc3_irq_latch = cpu_data_in ^ mapper90_xor;
-                           mmc3_irq_reload = 1;
+                           mmc3_irq_latch <= cpu_data_in ^ mapper90_xor;
+                           mmc3_irq_reload <= 1;
                         end
                      3'b110: mapper90_xor = cpu_data_in;
                      3'b111: ;
@@ -1294,7 +1294,7 @@ begin
          ppu_nt_read_count <= ppu_nt_read_count + 1'b1;
       end else begin
          scanline = scanline + 1'b1;
-         if (mmc5_irq_enabled && scanline == mmc5_irq_line+1)
+         if (mmc5_irq_enabled && scanline == mmc5_irq_line + 1)
             mmc5_irq_out <= 1;
          if (scanline == 129)
             mapper_163_latch <= 1;
