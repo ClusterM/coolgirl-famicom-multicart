@@ -42,6 +42,7 @@ assign irq = (
    vrc3_irq_out |
    mapper69_irq_out |
    mapper42_irq_out |
+   mapper83_irq_out |
    mapper90_irq_out) ? 1'b0 : 1'bZ;
 // for MMC3 scanline-based interrupts, counts A12 rises after long A12 falls
 reg mmc3_irq_enabled = 0;           // register to enable/disable counter
@@ -78,14 +79,14 @@ reg mapper69_irq_enabled = 0;           // register to enable/disable IRQ
 reg mapper69_counter_enabled = 0;       // register to enable/disable counter
 reg [15:0] mapper69_irq_value = 0;      // counter itself (downcounting)
 reg mapper69_irq_out = 0;               // stores 1 when IRQ is triggered
-// for VRC4 CPU-based interrupts
+// for VRC4, CPU-based interrupts
 reg [7:0] vrc4_irq_value = 0;   // counter itself (upcounting)
 reg [2:0] vrc4_irq_control = 0; // IRQ settings
 reg [7:0] vrc4_irq_latch = 0;   // stores counter reload latch value
 reg [6:0] vrc4_irq_prescaler = 0;   // prescaler counter for VRC4
 reg [1:0] vrc4_irq_prescaler_counter = 0; // prescaler cicles counter for VRC4
 reg vrc4_irq_out = 0;           // stores 1 when IRQ is triggered
-// for VRC3 CPU-based interrupts
+// for VRC3, CPU-based interrupts
 reg [15:0] vrc3_irq_value = 0;  // counter itself (upcounting)
 reg [3:0] vrc3_irq_control = 0; // IRQ settings
 reg [15:0] vrc3_irq_latch = 0;  // stores counter reload latch value
@@ -94,6 +95,11 @@ reg vrc3_irq_out = 0;           // stores 1 when IRQ is triggered
 reg mapper42_irq_enabled = 0;       // register to enable/disable counter
 reg [14:0] mapper42_irq_value = 0;  // counter itself (upcounting)
 wire mapper42_irq_out = mapper42_irq_value[14] & mapper42_irq_value[13];
+// for mapper #83, CPU-based interrupts
+reg mapper83_irq_enabled_latch = 0;
+reg mapper83_irq_enabled = 0;
+reg [15:0] mapper83_irq_counter = 0;
+reg mapper83_irq_out = 0;
 // for mapper #90, unfiltered PPU A12 counter
 reg mapper90_irq_enabled = 0;       // register to enable/disable counter
 reg [7:0] mapper90_xor;             // XOR register (is not used actually)
@@ -142,6 +148,8 @@ assign {cpu_data_out_enabled, cpu_data_out} =
             {1'b1, mmc5_irq_out, ~new_screen, 6'b000000} :
       (ENABLE_MAPPER_036 && mapper == 6'b011101 && {cpu_addr_in[14:13], cpu_addr_in[8]} == 3'b101) ? // Need by Strike Wolf, being simplified mapper, this cart still uses some TCX mapper features andrely on it
             {1'b1, 2'b00, prg_bank_a[3:2], 4'b00} :
+      (ENABLE_MAPPER_083 && mapper == 6'b100011 && {cpu_addr_in[14:12]} == 3'b101) ? // $5000 - DIP switches
+            {1'b1, 6'b000000, flags[1:0]} :
       (ENABLE_MAPPER_090_MULTIPLIER && (mapper == 6'b001101) && (cpu_addr_in[14:0] == 15'h5800)) ? {1'b1, mul[7:0]} :
       (ENABLE_MAPPER_090_MULTIPLIER && (mapper == 6'b001101) && (cpu_addr_in[14:0] == 15'h5801)) ? {1'b1, mul[15:8]} :
       9'b000000000
@@ -336,6 +344,17 @@ begin
       mapper42_irq_value[14:0] <= mapper42_irq_value[14:0] + 1'b1;
    end
 
+   // for mapper #83
+   if (ENABLE_MAPPER_083)
+   begin
+      if (mapper83_irq_enabled)
+      begin
+         if (mapper83_irq_counter == 0)
+            mapper83_irq_out <= 1;
+         mapper83_irq_counter = mapper83_irq_counter - 1'b1;
+      end
+   end
+   
    // for mapper #90
    if (mapper90_irq_pending & !mapper90_irq_out_clear)
    begin
@@ -1173,6 +1192,49 @@ begin
                3'b110: chr_bank_a[5:2] <= cpu_data_in[3:0]; // $E000-$EFFF
                3'b111: chr_bank_e[5:2] <= cpu_data_in[3:0]; // $F000-$FFFF
             endcase
+         end
+         
+         // Mapper #83 - used for games from Cony, also known as Yoko
+         if (ENABLE_MAPPER_083 && (mapper == 6'b100011))
+         begin
+            case (cpu_addr_in[9:8])
+                2'b01: begin // $81xx
+                           mirroring <= cpu_data_in[1:0];
+                           mapper83_irq_enabled_latch <= cpu_data_in[7];
+                       end
+                2'b10: begin // 82xx
+                           if (!cpu_addr_in[0])
+                           begin
+                               mapper83_irq_out <= 0;
+                               mapper83_irq_counter[7:0] <= cpu_data_in[7:0];
+                           end else begin
+                               mapper83_irq_enabled <= mapper83_irq_enabled_latch;
+                               mapper83_irq_counter[15:8] <= cpu_data_in[7:0];
+                           end
+                       end
+                2'b11: begin // 83xx
+                           if (!cpu_addr_in[4])
+                           begin
+                               case (cpu_addr_in[1:0])
+                                   2'b00: prg_bank_a[7:0] <= cpu_data_in[7:0];
+                                   2'b01: prg_bank_b[7:0] <= cpu_data_in[7:0];
+                                   2'b10: prg_bank_c[7:0] <= cpu_data_in[7:0];
+                                   //2'b11: prg_bank_6000[7:0] <= cpu_data_in[7:0];
+                               endcase
+                           end else begin
+                               case (cpu_addr_in[2:0])
+                                   3'b000: chr_bank_a[7:0] <= cpu_data_in[7:0];
+                                   3'b001: chr_bank_b[7:0] <= cpu_data_in[7:0];
+                                   3'b010: chr_bank_c[7:0] <= cpu_data_in[7:0];
+                                   3'b011: chr_bank_d[7:0] <= cpu_data_in[7:0];
+                                   3'b100: chr_bank_e[7:0] <= cpu_data_in[7:0];
+                                   3'b101: chr_bank_f[7:0] <= cpu_data_in[7:0];
+                                   3'b110: chr_bank_g[7:0] <= cpu_data_in[7:0];
+                                   3'b111: chr_bank_h[7:0] <= cpu_data_in[7:0];
+                               endcase                             
+                           end
+                       end
+            endcase            
          end
       end // romsel
    end // write

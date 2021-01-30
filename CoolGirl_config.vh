@@ -23,6 +23,7 @@ parameter ENABLE_MAPPER_073 = 0,             // mapper #073 - VRC3
 parameter ENABLE_MAPPER_075 = 0,             // mapper #075 - VRC1
 parameter ENABLE_MAPPER_078 = 1,             // mapper #078 - Irem: Holy Diver and Uchuusen - Cosmo Carrier
 parameter ENABLE_MAPPER_079_113_146 = 0,     // mappers #079, #113, #146 - NINA-03/06 and Sachen 3015
+parameter ENABLE_MAPPER_083 = 0,             // mapper #083 - Cony/Yoko, submapper #0 only
 parameter ENABLE_MAPPER_087 = 1,             // mapper #087 - Jaleco
 parameter ENABLE_MAPPER_090 = 1,             // mapper #090 - JY (partical support): Aladdin only
 parameter ENABLE_MAPPER_090_ACCURATE_IRQ = 0,// mapper #090 accurate IRQs: for Super Mario World
