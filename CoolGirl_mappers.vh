@@ -133,6 +133,10 @@ reg [7:0] mapper163_r4 = 0;
 reg [7:0] mapper163_r5 = 0;
 // to block two writes in a row
 reg writed;
+// for VRC
+wire shift_chr = ENABLE_MAPPER_021_022_023_025 && ENABLE_MAPPER_022 && (mapper == 6'b011000) && flags[1];
+wire vrc_2b_hi = cpu_addr_in[1] | cpu_addr_in[3] | cpu_addr_in[5] | cpu_addr_in[7];
+wire vrc_2b_low = cpu_addr_in[0] | cpu_addr_in[2] | cpu_addr_in[4] | cpu_addr_in[6];
 
 wire cpu_data_out_enabled;
 wire [7:0] cpu_data_out;
@@ -190,54 +194,50 @@ wire [20:13] prg_addr_mapped = (map_rom_on_6000 & romsel & m2) ? prg_bank_6000 :
    )
 );
 
-wire [18:10] chr_addr_mapped = chr_mode[2] ? (
-   chr_mode[1] ? (
-      chr_mode[0] ? (
-         // 111 - 0x400(A)+0x400(B)+0x400(C)+0x400(D)+0x400(E)+0x400(F)+0x400(G)+0x400(H)
-         ppu_addr_in[12] ?
-            (ppu_addr_in[11] ? (ppu_addr_in[10] ? chr_bank_h : chr_bank_g) :
-            (ppu_addr_in[10] ? chr_bank_f : chr_bank_e)) : (ppu_addr_in[11] ? (ppu_addr_in[10] ? chr_bank_d : chr_bank_c) : (ppu_addr_in[10] ? chr_bank_b : chr_bank_a))
-      ) : ( // chr_mode[0]
-         // 110 - 0x800(A)+0x800(C)+0x800(E)+0x800(G)
-         {ppu_addr_in[12] ?
-            (ppu_addr_in[11] ? chr_bank_g[7:1] : chr_bank_e[7:1]) :
-            (ppu_addr_in[11] ? chr_bank_c[7:1] : chr_bank_a[7:1]), ppu_addr_in[10]}
-      )
-   ) : ( // chr_mode[1]
-      // 100 - 0x1000(A) + 0x1000(E)
-      // 101 - 0x1000(A/B) + 0x1000(E/F) - MMC2 и MMC4
-   {ppu_addr_in[12] ?
-         (((ENABLE_MAPPER_009_010) && chr_mode[0] && ppu_latch1) ? chr_bank_f[7:2] : chr_bank_e[7:2]) :
-         (((ENABLE_MAPPER_009_010) && chr_mode[0] && ppu_latch0) ? chr_bank_b[7:2] : chr_bank_a[7:2]),
-      ppu_addr_in[11:10]}
-   )
-) : ( // chr_mode[2]
-   chr_mode[1] ? (
-      // 010 - 0x800(A)+0x800(C)+0x400(E)+0x400(F)+0x400(G)+0x400(H)
-      // 011 - 0x400(E)+0x400(F)+0x400(G)+0x400(H)+0x800(A)+0x800(С)
-   (ppu_addr_in[12]^chr_mode[0]) ?
-         (ppu_addr_in[11] ?
-            (ppu_addr_in[10] ? chr_bank_h : chr_bank_g) :
-            (ppu_addr_in[10] ? chr_bank_f : chr_bank_e)
-         ) : (
-            ppu_addr_in[11] ? {chr_bank_c[7:1],ppu_addr_in[10]} : {chr_bank_a[7:1],ppu_addr_in[10]}
+wire [18:10] chr_addr_mapped = (
+   chr_mode[2] ? (
+      chr_mode[1] ? (
+         chr_mode[0] ? (
+            // 111 - 0x400(A)+0x400(B)+0x400(C)+0x400(D)+0x400(E)+0x400(F)+0x400(G)+0x400(H)
+            ppu_addr_in[12] ?
+               (ppu_addr_in[11] ? (ppu_addr_in[10] ? chr_bank_h : chr_bank_g) :
+               (ppu_addr_in[10] ? chr_bank_f : chr_bank_e)) : (ppu_addr_in[11] ? (ppu_addr_in[10] ? chr_bank_d : chr_bank_c) : (ppu_addr_in[10] ? chr_bank_b : chr_bank_a))
+         ) : ( // chr_mode[0]
+            // 110 - 0x800(A)+0x800(C)+0x800(E)+0x800(G)
+            {ppu_addr_in[12] ?
+               (ppu_addr_in[11] ? chr_bank_g[7:1] : chr_bank_e[7:1]) :
+               (ppu_addr_in[11] ? chr_bank_c[7:1] : chr_bank_a[7:1]), ppu_addr_in[10]}
          )
-   ) : ( // chr_mode[1]
-      (ENABLE_MAPPER_163 && chr_mode[0]) ? (
-         // 001 - Mapper #163 special
-         {mapper_163_latch, ppu_addr_in[11:10]}
-      ) : (
-         // 000 - 0x2000(A)
-         {chr_bank_a[7:3], ppu_addr_in[12:10]}
+      ) : ( // chr_mode[1]
+         // 100 - 0x1000(A) + 0x1000(E)
+         // 101 - 0x1000(A/B) + 0x1000(E/F) - MMC2 и MMC4
+      {ppu_addr_in[12] ?
+            (((ENABLE_MAPPER_009_010) && chr_mode[0] && ppu_latch1) ? chr_bank_f[7:2] : chr_bank_e[7:2]) :
+            (((ENABLE_MAPPER_009_010) && chr_mode[0] && ppu_latch0) ? chr_bank_b[7:2] : chr_bank_a[7:2]),
+         ppu_addr_in[11:10]}
+      )
+   ) : ( // chr_mode[2]
+      chr_mode[1] ? (
+         // 010 - 0x800(A)+0x800(C)+0x400(E)+0x400(F)+0x400(G)+0x400(H)
+         // 011 - 0x400(E)+0x400(F)+0x400(G)+0x400(H)+0x800(A)+0x800(С)
+      (ppu_addr_in[12]^chr_mode[0]) ?
+            (ppu_addr_in[11] ?
+               (ppu_addr_in[10] ? chr_bank_h : chr_bank_g) :
+               (ppu_addr_in[10] ? chr_bank_f : chr_bank_e)
+            ) : (
+               ppu_addr_in[11] ? {chr_bank_c[7:1],ppu_addr_in[10]} : {chr_bank_a[7:1],ppu_addr_in[10]}
+            )
+      ) : ( // chr_mode[1]
+         (ENABLE_MAPPER_163 && chr_mode[0]) ? (
+            // 001 - Mapper #163 special
+            {mapper_163_latch, ppu_addr_in[11:10]}
+         ) : (
+            // 000 - 0x2000(A)
+            {chr_bank_a[7:3], ppu_addr_in[12:10]}
+         )
       )
    )
-);
-
-
-
-// for VRC
-wire vrc_2b_hi = cpu_addr_in[1] | cpu_addr_in[3] | cpu_addr_in[5] | cpu_addr_in[7];
-wire vrc_2b_low = cpu_addr_in[0] | cpu_addr_in[2] | cpu_addr_in[4] | cpu_addr_in[6];
+) >> shift_chr;
 
 always @ (negedge m2)
 begin
@@ -1028,50 +1028,23 @@ begin
                5'b01001,
                5'b01010,
                5'b01011: prg_bank_b[4:0] <= cpu_data_in[4:0];  // $A000-$A003, PRG1
+               5'b01100: chr_bank_a[3:0] <= cpu_data_in[3:0];  // $B000, CHR0 low
+               5'b01101: chr_bank_a[7:4] <= cpu_data_in[3:0];  // $B001, CHR0 hi
+               5'b01110: chr_bank_b[3:0] <= cpu_data_in[3:0];  // $B002, CHR1 low
+               5'b01111: chr_bank_b[7:4] <= cpu_data_in[3:0];  // $B003, CHR1 hi
+               5'b10000: chr_bank_c[3:0] <= cpu_data_in[3:0];  // $C000, CHR2 low
+               5'b10001: chr_bank_c[7:4] <= cpu_data_in[3:0];  // $C001, CHR2 hi
+               5'b10010: chr_bank_d[3:0] <= cpu_data_in[3:0];  // $C002, CHR3 low
+               5'b10011: chr_bank_d[7:4] <= cpu_data_in[3:0];  // $C003, CHR3 hi
+               5'b10100: chr_bank_e[3:0] <= cpu_data_in[3:0];  // $D000, CHR4 low
+               5'b10101: chr_bank_e[7:4] <= cpu_data_in[3:0];  // $D001, CHR4 hi
+               5'b10110: chr_bank_f[3:0] <= cpu_data_in[3:0];  // $D002, CHR5 low
+               5'b10111: chr_bank_f[7:4] <= cpu_data_in[3:0];  // $D003, CHR5 hi
+               5'b11000: chr_bank_g[3:0] <= cpu_data_in[3:0];  // $E000, CHR6 low
+               5'b11001: chr_bank_g[7:4] <= cpu_data_in[3:0];  // $E001, CHR6 hi
+               5'b11010: chr_bank_h[3:0] <= cpu_data_in[3:0];  // $E002, CHR7 low
+               5'b11011: chr_bank_h[7:4] <= cpu_data_in[3:0];  // $E003, CHR7 hi
             endcase
-            // flags[0] to shift lines
-            if (!ENABLE_MAPPER_022 | ~flags[1])
-            begin
-               case ({cpu_addr_in[14:12], flags[0] ? vrc_2b_low : vrc_2b_hi, flags[0] ? vrc_2b_hi : vrc_2b_low})
-                  5'b01100: chr_bank_a[3:0] <= cpu_data_in[3:0];  // $B000, CHR0 low
-                  5'b01101: chr_bank_a[7:4] <= cpu_data_in[3:0];  // $B001, CHR0 hi
-                  5'b01110: chr_bank_b[3:0] <= cpu_data_in[3:0];  // $B002, CHR1 low
-                  5'b01111: chr_bank_b[7:4] <= cpu_data_in[3:0];  // $B003, CHR1 hi
-                  5'b10000: chr_bank_c[3:0] <= cpu_data_in[3:0];  // $C000, CHR2 low
-                  5'b10001: chr_bank_c[7:4] <= cpu_data_in[3:0];  // $C001, CHR2 hi
-                  5'b10010: chr_bank_d[3:0] <= cpu_data_in[3:0];  // $C002, CHR3 low
-                  5'b10011: chr_bank_d[7:4] <= cpu_data_in[3:0];  // $C003, CHR3 hi
-                  5'b10100: chr_bank_e[3:0] <= cpu_data_in[3:0];  // $D000, CHR4 low
-                  5'b10101: chr_bank_e[7:4] <= cpu_data_in[3:0];  // $D001, CHR4 hi
-                  5'b10110: chr_bank_f[3:0] <= cpu_data_in[3:0];  // $D002, CHR5 low
-                  5'b10111: chr_bank_f[7:4] <= cpu_data_in[3:0];  // $D003, CHR5 hi
-                  5'b11000: chr_bank_g[3:0] <= cpu_data_in[3:0];  // $E000, CHR6 low
-                  5'b11001: chr_bank_g[7:4] <= cpu_data_in[3:0];  // $E001, CHR6 hi
-                  5'b11010: chr_bank_h[3:0] <= cpu_data_in[3:0];  // $E002, CHR7 low
-                  5'b11011: chr_bank_h[7:4] <= cpu_data_in[3:0];  // $E003, CHR7 hi
-               endcase
-            end else begin
-               case ({cpu_addr_in[14:12], flags[0] ? vrc_2b_low : vrc_2b_hi, flags[0] ? vrc_2b_hi : vrc_2b_low})
-                  // VRC2a
-                  5'b01100: chr_bank_a[2:0] <= cpu_data_in[3:1];  // $B000, CHR0 low
-                  5'b01101: chr_bank_a[7:3] <= cpu_data_in[3:0];  // $B001, CHR0 hi
-                  5'b01110: chr_bank_b[2:0] <= cpu_data_in[3:1];  // $B002, CHR1 low
-                  5'b01111: chr_bank_b[7:3] <= cpu_data_in[3:0];  // $B003, CHR1 hi
-                  5'b10000: chr_bank_c[2:0] <= cpu_data_in[3:1];  // $C000, CHR2 low
-                  5'b10001: chr_bank_c[7:3] <= cpu_data_in[3:0];  // $C001, CHR2 hi
-                  5'b10010: chr_bank_d[2:0] <= cpu_data_in[3:1];  // $C002, CHR3 low
-                  5'b10011: chr_bank_d[7:3] <= cpu_data_in[3:0];  // $C003, CHR3 hi
-                  5'b10100: chr_bank_e[2:0] <= cpu_data_in[3:1];  // $D000, CHR4 low
-                  5'b10101: chr_bank_e[7:3] <= cpu_data_in[3:0];  // $D001, CHR4 hi
-                  5'b10110: chr_bank_f[2:0] <= cpu_data_in[3:1];  // $D002, CHR5 low
-                  5'b10111: chr_bank_f[7:3] <= cpu_data_in[3:0];  // $D003, CHR5 hi
-                  5'b11000: chr_bank_g[2:0] <= cpu_data_in[3:1];  // $E000, CHR6 low
-                  5'b11001: chr_bank_g[7:3] <= cpu_data_in[3:0];  // $E001, CHR6 hi
-                  5'b11010: chr_bank_h[2:0] <= cpu_data_in[3:1];  // $E002, CHR7 low
-                  5'b11011: chr_bank_h[7:3] <= cpu_data_in[3:0];  // $E003, CHR7 hi
-               endcase
-            end
-
             if (ENABLE_VRC4_INTERRUPTS)
             begin
                if (cpu_addr_in[14:12] == 3'b111)
