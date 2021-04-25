@@ -205,15 +205,15 @@ wire [18:10] chr_addr_mapped = (
          ) : ( // chr_mode[0]
             // 110 - 0x800(A)+0x800(C)+0x800(E)+0x800(G)
             {ppu_addr_in[12] ?
-               (ppu_addr_in[11] ? chr_bank_g[7:1] : chr_bank_e[7:1]) :
-               (ppu_addr_in[11] ? chr_bank_c[7:1] : chr_bank_a[7:1]), ppu_addr_in[10]}
+               (ppu_addr_in[11] ? chr_bank_g[8:1] : chr_bank_e[8:1]) :
+               (ppu_addr_in[11] ? chr_bank_c[8:1] : chr_bank_a[8:1]), ppu_addr_in[10]}
          )
       ) : ( // chr_mode[1]
          // 100 - 0x1000(A) + 0x1000(E)
          // 101 - 0x1000(A/B) + 0x1000(E/F) - MMC2 и MMC4
       {ppu_addr_in[12] ?
-            (((ENABLE_MAPPER_009_010) && chr_mode[0] && ppu_latch1) ? chr_bank_f[7:2] : chr_bank_e[7:2]) :
-            (((ENABLE_MAPPER_009_010) && chr_mode[0] && ppu_latch0) ? chr_bank_b[7:2] : chr_bank_a[7:2]),
+            (((ENABLE_MAPPER_009_010) && chr_mode[0] && ppu_latch1) ? chr_bank_f[8:2] : chr_bank_e[8:2]) :
+            (((ENABLE_MAPPER_009_010) && chr_mode[0] && ppu_latch0) ? chr_bank_b[8:2] : chr_bank_a[8:2]),
          ppu_addr_in[11:10]}
       )
    ) : ( // chr_mode[2]
@@ -225,7 +225,7 @@ wire [18:10] chr_addr_mapped = (
                (ppu_addr_in[10] ? chr_bank_h : chr_bank_g) :
                (ppu_addr_in[10] ? chr_bank_f : chr_bank_e)
             ) : (
-               ppu_addr_in[11] ? {chr_bank_c[7:1],ppu_addr_in[10]} : {chr_bank_a[7:1],ppu_addr_in[10]}
+               ppu_addr_in[11] ? {chr_bank_c[8:1],ppu_addr_in[10]} : {chr_bank_a[8:1],ppu_addr_in[10]}
             )
       ) : ( // chr_mode[1]
          (ENABLE_MAPPER_163 && chr_mode[0]) ? (
@@ -233,7 +233,7 @@ wire [18:10] chr_addr_mapped = (
             {mapper_163_latch, ppu_addr_in[11:10]}
          ) : (
             // 000 - 0x2000(A)
-            {chr_bank_a[7:3], ppu_addr_in[12:10]}
+            {chr_bank_a[8:3], ppu_addr_in[12:10]}
          )
       )
    )
