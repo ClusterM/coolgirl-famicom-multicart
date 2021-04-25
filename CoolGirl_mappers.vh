@@ -1054,7 +1054,7 @@ begin
                      2'b01: vrc4_irq_latch[7:4] <= cpu_data_in[3:0];  // IRQ latch hi
                      2'b10: begin // IRQ control
                         vrc4_irq_out <= 0; // ack
-                        vrc4_irq_control[2:0] <= cpu_data_in[2:0]; // mode, enabled, enabled after ack
+                        vrc4_irq_control[2:0] = cpu_data_in[2:0]; // mode, enabled, enabled after ack
                         if (vrc4_irq_control[1]) begin // if E is set
                            vrc4_irq_prescaler_counter[1:0] <= 2'b00; // reset prescaler
                            vrc4_irq_prescaler[6:0] <= 7'b0000000;
