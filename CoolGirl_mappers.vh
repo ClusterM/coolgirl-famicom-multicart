@@ -210,7 +210,7 @@ wire [18:10] chr_addr_mapped = (
          )
       ) : ( // chr_mode[1]
          // 100 - 0x1000(A) + 0x1000(E)
-         // 101 - 0x1000(A/B) + 0x1000(E/F) - MMC2 и MMC4
+         // 101 - 0x1000(A/B) + 0x1000(E/F) - MMC2 and MMC4
       {ppu_addr_in[12] ?
             (((ENABLE_MAPPER_009_010) && chr_mode[0] && ppu_latch1) ? chr_bank_f[8:2] : chr_bank_e[8:2]) :
             (((ENABLE_MAPPER_009_010) && chr_mode[0] && ppu_latch0) ? chr_bank_b[8:2] : chr_bank_a[8:2]),

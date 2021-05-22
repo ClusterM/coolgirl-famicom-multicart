@@ -39,7 +39,7 @@ parameter ENABLE_MAPPER_184 = 0,             // mapper #184
 parameter ENABLE_MAPPER_189 = 1,             // mapper #189 - TXC
 parameter ENABLE_MAPPER_206 = 0,             // mapper #206 - the simpler predecessor of the MMC3
 parameter ENABLE_MAPPER_228 = 0,             // mapper #228 - Action52: Cheetahmen II only
-parameter ENABLE_MAPPER_AC08 = 1,            // mapper AC-08: Green Beret FDS conversion
+parameter ENABLE_MAPPER_AC08 = 0,            // mapper AC-08: Green Beret FDS conversion
 
 parameter ENABLE_FOUR_SCREEN = 1,            // Enable four-screen support, required by some games
 parameter UxROM_BITSIZE = 4,                 // Maximum size for UxROM PRG (3=256KB - standard size, 4=512KB - required for some hacks/homebrew)
