@@ -26,6 +26,8 @@ reg prg_write_enabled = 0;
 reg [1:0] mirroring = 0;
 reg four_screen = 0;
 reg lockout = 0;
+reg [8:0] controller_data = 0;
+reg [1:0] reset_state = 0;
 
 // Multiplier
 reg [7:0] mul1 = 0;
@@ -141,23 +143,37 @@ wire vrc_2b_low = cpu_addr_in[0] | cpu_addr_in[2] | cpu_addr_in[4] | cpu_addr_in
 wire cpu_data_out_enabled;
 wire [7:0] cpu_data_out;
 assign {cpu_data_out_enabled, cpu_data_out} =
-   (m2 & romsel & cpu_rw_in) ?
-   (
-      ((mapper == 0) && (cpu_addr_in[14:12] == 3'b101)) ? {8'b10000000, new_dendy} : // $5000 - $5FFF - new dendy flag
-      (ENABLE_MAPPER_163 && (mapper == 6'b000110) && ({cpu_addr_in[14:12],cpu_addr_in[10:8]} == 6'b101001)) ?
-            {1'b1, mapper163_r2 | mapper163_r0 | mapper163_r1 | ~mapper163_r3} :
-      (ENABLE_MAPPER_163 && (mapper == 6'b000110) && ({cpu_addr_in[14:12],cpu_addr_in[10:8]} == 6'b101101)) ?
-            {1'b1, mapper163_r5[0] ? mapper163_r2 : mapper163_r1} :
-      (ENABLE_MAPPER_005 && (mapper == 6'b001111) && (cpu_addr_in[14:0] == 15'h5204)) ?
-            {1'b1, mmc5_irq_out, ~new_screen, 6'b000000} :
-      (ENABLE_MAPPER_036 && mapper == 6'b011101 && {cpu_addr_in[14:13], cpu_addr_in[8]} == 3'b101) ? // Need by Strike Wolf, being simplified mapper, this cart still uses some TCX mapper features andrely on it
-            {1'b1, 2'b00, prg_bank_a[3:2], 4'b00} :
-      (ENABLE_MAPPER_083 && mapper == 6'b100011 && {cpu_addr_in[14:12]} == 3'b101) ? // $5000 - DIP switches
-            {1'b1, 6'b000000, flags[1:0]} :
-      (ENABLE_MAPPER_090_MULTIPLIER && (mapper == 6'b001101) && (cpu_addr_in[14:0] == 15'h5800)) ? {1'b1, mul[7:0]} :
-      (ENABLE_MAPPER_090_MULTIPLIER && (mapper == 6'b001101) && (cpu_addr_in[14:0] == 15'h5801)) ? {1'b1, mul[15:8]} :
-      9'b000000000
-   ): 9'b000000000;
+   (cpu_rw_in && m2) ? // reading?
+      ((RESET_COMBINATION != 0) && (reset_state != 0)) ? // resetting?
+      (
+         // jmp [$FFFC]
+         reset_state == 1 ?
+            {1'b1, 8'h6C}
+         : reset_state == 2 ?
+            {1'b1, 8'hFC}
+         :
+            {1'b1, 8'hFF}
+      )
+      : ( // not resetting
+         romsel ? // reading $0000-$7FFF?
+         (
+            ((mapper == 0) && (cpu_addr_in[14:12] == 3'b101)) ? {8'b10000000, new_dendy} : // $5000 - $5FFF - new dendy flag
+            (ENABLE_MAPPER_163 && (mapper == 6'b000110) && ({cpu_addr_in[14:12],cpu_addr_in[10:8]} == 6'b101001)) ?
+                  {1'b1, mapper163_r2 | mapper163_r0 | mapper163_r1 | ~mapper163_r3} :
+            (ENABLE_MAPPER_163 && (mapper == 6'b000110) && ({cpu_addr_in[14:12],cpu_addr_in[10:8]} == 6'b101101)) ?
+                  {1'b1, mapper163_r5[0] ? mapper163_r2 : mapper163_r1} :
+            (ENABLE_MAPPER_005 && (mapper == 6'b001111) && (cpu_addr_in[14:0] == 15'h5204)) ?
+                  {1'b1, mmc5_irq_out, ~new_screen, 6'b000000} :
+            (ENABLE_MAPPER_036 && mapper == 6'b011101 && {cpu_addr_in[14:13], cpu_addr_in[8]} == 3'b101) ? // Need by Strike Wolf, being simplified mapper, this cart still uses some TCX mapper features andrely on it
+                  {1'b1, 2'b00, prg_bank_a[3:2], 4'b00} :
+            (ENABLE_MAPPER_083 && mapper == 6'b100011 && {cpu_addr_in[14:12]} == 3'b101) ? // $5000 - DIP switches
+                  {1'b1, 6'b000000, flags[1:0]} :
+            (ENABLE_MAPPER_090_MULTIPLIER && (mapper == 6'b001101) && (cpu_addr_in[14:0] == 15'h5800)) ? {1'b1, mul[7:0]} :
+            (ENABLE_MAPPER_090_MULTIPLIER && (mapper == 6'b001101) && (cpu_addr_in[14:0] == 15'h5801)) ? {1'b1, mul[15:8]} :
+            9'b00000000
+         ): 9'b00000000
+      )
+   : 9'b00000000;
 
 // Mirroring: 00=vertical, 01=horizontal, 10=1Sa, 11=1Sb
 assign ppu_ciram_a10 = (ENABLE_MAPPER_118 & (mapper == 6'b010100) & flags[0]) ? chr_addr_mapped[17] :
@@ -368,9 +384,54 @@ begin
 
    if (cpu_rw_in == 1) // read
    begin
+      // block two writes in a row (RMW) for games like Snow Bros. and Bill & Ted's Excellent Adventure
+      // also you can remove this check and just patch those games, lol
       writed <= 0;
-   // block two writes in a row (RMW) for games like Snow Bros. and Bill & Ted's Excellent Adventure
-   // also you can remove this check and just patch those games, lol
+
+      if ((RESET_COMBINATION != 0) && (reset_state != 0))
+      begin
+         // increase reset state after each read
+         reset_state = reset_state + 1'b1;
+      end
+
+      // Reading controller
+      if ((RESET_COMBINATION != 0) && (cpu_addr_in == 15'h4016) && lockout)
+      begin
+         controller_data[8:0] = {controller_data[7:0], cpu_data_in[0]};
+         if (controller_data[8:0] == {1'b1, RESET_COMBINATION})
+         begin
+            // Reset combination pressed. Reset!
+            prg_base <= 0;
+            prg_mask <= 7'b1111000;
+            chr_mask <= 0;
+            prg_mode <= 0;
+            map_rom_on_6000 <= 0;
+            prg_bank_6000 <= 0;
+            prg_bank_a <= 0;
+            prg_bank_b <= 1;
+            prg_bank_c <= 8'b11111110;
+            prg_bank_d <= 8'b11111111;
+            chr_mode <= 0;
+            chr_bank_a <= 0;
+            chr_bank_b <= 1;
+            chr_bank_c <= 2;
+            chr_bank_d <= 3;
+            chr_bank_e <= 4;
+            chr_bank_f <= 5;
+            chr_bank_g <= 6;
+            chr_bank_h <= 7;
+            mapper <= 0;
+            flags <= 0;
+            sram_enabled <= 0;
+            sram_page <= 0;
+            chr_write_enabled <= 0;
+            prg_write_enabled <= 0;
+            mirroring <= 0;
+            four_screen <= 0;
+            lockout <= 0;
+            reset_state = 1;
+         end
+      end
    end else if (cpu_rw_in == 0 && !writed) // write
    begin
       writed <= 1;
@@ -400,6 +461,11 @@ begin
 
             if (ENABLE_MAPPER_009_010 && mapper == 6'b010001) prg_bank_b <= 8'b11111101;
             if (ENABLE_MAPPER_065 && mapper == 6'b001110) prg_bank_b <= 1;
+         end
+
+         if ((RESET_COMBINATION != 0) && (cpu_addr_in == 15'h4016))
+         begin
+            controller_data = 1;
          end
 
          // Mapper #163
@@ -998,11 +1064,11 @@ begin
                3'b100: prg_bank_6000[3:0] <= cpu_data_in[3:0]; // $E000, PRG Reg (8k @ $6000)
                3'b101: mirroring <= {1'b0, cpu_data_in[3]}; // Mirroring
                3'b110: if (ENABLE_MAPPER_042_INTERRUPTS) begin
-                        mapper42_irq_enabled <= cpu_data_in[1];
-                        if (!mapper42_irq_enabled) begin
-                           mapper42_irq_value <= 0;
-                        end
-                     end
+                          mapper42_irq_enabled <= cpu_data_in[1];
+                          if (!mapper42_irq_enabled) begin
+                              mapper42_irq_value <= 0;
+                          end
+                       end
             endcase
          end
 
