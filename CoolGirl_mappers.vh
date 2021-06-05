@@ -401,6 +401,7 @@ begin
          if (controller_data[8:0] == {1'b1, RESET_COMBINATION})
          begin
             // Reset combination pressed. Reset!
+            // Revert registers to original state
             prg_base <= 0;
             prg_mask <= 7'b1111000;
             chr_mask <= 0;
@@ -429,6 +430,31 @@ begin
             mirroring <= 0;
             four_screen <= 0;
             lockout <= 0;
+
+            // Disable IRQs
+            mmc3_irq_enabled <= 0;
+            mmc5_irq_enabled <= 0;
+            mapper18_irq_control <= 0;
+            mapper65_irq_enabled <= 0;
+            mapper69_irq_enabled <= 0;
+            vrc4_irq_control <= 0;
+            vrc3_irq_control <= 0;
+            mapper42_irq_enabled <= 0;
+            mapper83_irq_enabled <= 0;
+            mapper90_irq_enabled <= 0;
+
+            // Acknowledge IRQs
+            mmc5_irq_ack <= 1;
+            mapper18_irq_out <= 0;
+            mapper65_irq_out <= 0;
+            vrc4_irq_out <= 0;
+            vrc3_irq_out <= 0;
+            mapper69_irq_out <= 0;
+            mapper42_irq_value <= 0;
+            mapper83_irq_out <= 0;
+            mapper90_irq_out <= 0;
+
+            // Start reset sequence
             reset_state = 1;
          end
       end
@@ -456,11 +482,16 @@ begin
                   {flags[2:0], mapper[4:0]} <= cpu_data_in[7:0];         // some flags, mapper
                3'b111: // $5xx7
                   // some other parameters
-                  {lockout, mapper[5], four_screen, mirroring[1:0], prg_write_enabled, chr_write_enabled, sram_enabled} <= cpu_data_in[7:0];
+                  begin
+                     {lockout, mapper[5], four_screen, mirroring[1:0], prg_write_enabled, chr_write_enabled, sram_enabled} <= cpu_data_in[7:0];
+                     // some unusual init stuff
+                     if (ENABLE_MAPPER_009_010 && mapper == 6'b010001) prg_bank_b <= 8'b11111101;
+                     if (ENABLE_MAPPER_042 && (mapper == 6'b010111)) map_rom_on_6000 <= 1;
+                     if (ENABLE_MAPPER_065 && mapper == 6'b001110) prg_bank_b <= 1;
+                     if (ENABLE_MAPPER_AC08 && (mapper == 6'b100001)) map_rom_on_6000 <= 1;
+                  end
             endcase
 
-            if (ENABLE_MAPPER_009_010 && mapper == 6'b010001) prg_bank_b <= 8'b11111101;
-            if (ENABLE_MAPPER_065 && mapper == 6'b001110) prg_bank_b <= 1;
          end
 
          if ((RESET_COMBINATION != 0) && (cpu_addr_in == 15'h4016))
@@ -1058,7 +1089,6 @@ begin
          // Mappers #42
          if (ENABLE_MAPPER_042 && (mapper == 6'b010111))
          begin
-            map_rom_on_6000 <= 1;
             case ({cpu_addr_in[14], cpu_addr_in[1:0]})
                3'b000: chr_bank_a[7:3] <= cpu_data_in[4:0]; // $8000, CHR Reg (8k @ $8000)
                3'b100: prg_bank_6000[3:0] <= cpu_data_in[3:0]; // $E000, PRG Reg (8k @ $6000)
@@ -1213,7 +1243,6 @@ begin
          if (ENABLE_MAPPER_AC08 && (mapper == 6'b100001))
          begin
             prg_bank_6000[3:0] <= cpu_data_in[4:1];
-            map_rom_on_6000 <= 1;
          end
 
          // Mapper #75 - VRC1
