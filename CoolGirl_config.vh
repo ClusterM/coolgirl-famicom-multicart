@@ -16,6 +16,7 @@ parameter ENABLE_MAPPER_042 = 1,             // mapper #042 - FDS conversions
 parameter ENABLE_MAPPER_042_INTERRUPTS = 0,  // mapper #042 interrupts: for Mario Baby only
 parameter ENABLE_MAPPER_065 = 1,             // mapper #065 - Irem's H3001
 parameter ENABLE_MAPPER_066 = 1,             // mapper #066 - GxROM
+parameter ENABLE_MAPPER_067 = 0,             // mapper #067 - Sunsoft-3
 parameter ENABLE_MAPPER_069 = 1,             // mapper #069 - Sunsoft FME-7
 parameter ENABLE_MAPPER_070 = 1,             // mapper #070 - Bandai: Family Trainer, Kamen Rider Club, Space Shadow
 parameter ENABLE_MAPPER_071 = 1,             // mapper #071 - Camerica: for Fire Hawk only

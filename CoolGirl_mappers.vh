@@ -45,7 +45,8 @@ assign irq = (
    mapper69_irq_out |
    mapper42_irq_out |
    mapper83_irq_out |
-   mapper90_irq_out) ? 1'b0 : 1'bZ;
+   mapper90_irq_out |
+   mapper67_irq_out) ? 1'b0 : 1'bZ;
 // for MMC3 scanline-based interrupts, counts A12 rises after long A12 falls
 reg mmc3_irq_enabled = 0;           // register to enable/disable counter
 reg [7:0] mmc3_irq_latch = 0;       // stores counter reload latch value
@@ -112,6 +113,11 @@ reg mapper90_irq_reload_clear = 0;  // flag to clear reload flag
 reg mapper90_irq_pending = 0;       // flag of pending IRQ
 reg mapper90_irq_out = 0;           // stores 1 when IRQ is triggered
 reg mapper90_irq_out_clear = 0;     // flag to clear pending flag
+// for mapper #67, CPU-based interrupts
+reg mapper67_irq_enabled = 0;
+reg mapper67_irq_latch = 0;
+reg [15:0] mapper67_irq_counter = 0;
+reg mapper67_irq_out = 0;
 
 // Mapper specific stuff
 // for MMC2/MMC4
@@ -382,6 +388,17 @@ begin
    if (mapper90_irq_reload_clear)
       mapper90_irq_reload <= 0;
 
+   // for mapper #67
+	if (ENABLE_MAPPER_067 && mapper67_irq_enabled)
+   begin
+		mapper67_irq_counter = mapper67_irq_counter - 1'b1;
+		if (mapper67_irq_counter == 16'hFFFF)
+		begin
+			mapper67_irq_out <= 1; // fire IRQ
+			mapper67_irq_enabled <= 0; // disable IRQ
+		end
+	end
+
    if (cpu_rw_in == 1) // read
    begin
       // block two writes in a row (RMW) for games like Snow Bros. and Bill & Ted's Excellent Adventure
@@ -442,6 +459,7 @@ begin
             mapper42_irq_enabled <= 0;
             mapper83_irq_enabled <= 0;
             mapper90_irq_enabled <= 0;
+            mapper67_irq_enabled <= 0;
 
             // Acknowledge IRQs
             mmc5_irq_ack <= 1;
@@ -453,6 +471,7 @@ begin
             mapper42_irq_value <= 0;
             mapper83_irq_out <= 0;
             mapper90_irq_out <= 0;
+            mapper67_irq_out <= 0;
 
             // Start reset sequence
             reset_state = 1;
@@ -1303,6 +1322,35 @@ begin
                            end
                        end
             endcase            
+         end
+
+         if (ENABLE_MAPPER_067 && (mapper == 6'b100100))
+         begin
+            if (cpu_addr_in[11])
+            begin
+               case (cpu_addr_in[14:12])
+                  3'b000: chr_bank_a[6:1] <= cpu_data_in[5:0]; // $8800
+                  3'b001: chr_bank_c[6:1] <= cpu_data_in[5:0]; // $9800
+                  3'b010: chr_bank_e[6:1] <= cpu_data_in[5:0]; // $A800
+                  3'b011: chr_bank_g[6:1] <= cpu_data_in[5:0]; // $B800
+                  3'b100: begin                                // $C800, IRQ load
+                             mapper67_irq_latch = ~mapper67_irq_latch;
+                             if (mapper67_irq_latch)
+                                mapper67_irq_counter[15:8] <= cpu_data_in[7:0];
+                             else
+                                mapper67_irq_counter[7:0] <= cpu_data_in[7:0];
+                          end
+                  3'b101: begin                                // $D800, IRQ enable
+									  mapper67_irq_latch <= 0;
+						           mapper67_irq_enabled <= cpu_data_in[4];
+                          end
+                  3'b110: mirroring[1:0] <= cpu_data_in[1:0];  // $E800
+                  3'b111: prg_bank_a[4:1] <= cpu_data_in[3:0]; // $F800
+               endcase
+            end else begin
+               // Interrupt Acknowledge ($8000)
+               mapper67_irq_out <= 0;
+            end
          end
       end // romsel
    end // write
