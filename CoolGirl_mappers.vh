@@ -143,8 +143,22 @@ reg [7:0] mapper163_r5 = 0;
 reg writed;
 // for VRC
 wire shift_chr = ENABLE_MAPPER_021_022_023_025 && ENABLE_MAPPER_022 && (mapper == 6'b011000) && flags[1];
-wire vrc_2b_hi = cpu_addr_in[1] | cpu_addr_in[3] | cpu_addr_in[5] | cpu_addr_in[7];
-wire vrc_2b_low = cpu_addr_in[0] | cpu_addr_in[2] | cpu_addr_in[4] | cpu_addr_in[6];
+wire vrc_2b_hi =
+	(!flags[0] && !flags[2]) ?
+		(cpu_addr_in[7] | cpu_addr_in[2]) // mapper #21
+	: (flags[0] && !flags[2]) ?
+		(cpu_addr_in[0]) // mapper #22
+	: (!flags[0] && flags[2]) ?
+		(cpu_addr_in[5] | cpu_addr_in[3] | cpu_addr_in[1]) // mapper #23
+	: (cpu_addr_in[2] | cpu_addr_in[0]); // mapper #25
+wire vrc_2b_low =
+	(!flags[0] && !flags[2]) ?
+		(cpu_addr_in[6] | cpu_addr_in[1]) // mapper #21
+	: (flags[0] && !flags[2]) ?
+		(cpu_addr_in[1]) // mapper #22
+	: (!flags[0] && flags[2]) ?
+		(cpu_addr_in[4] | cpu_addr_in[2] | cpu_addr_in[0]) // mapper #23
+	: (cpu_addr_in[3] | cpu_addr_in[1]); // mapper #25
 
 wire cpu_data_out_enabled;
 wire [7:0] cpu_data_out;
@@ -1128,7 +1142,7 @@ begin
          */
          if (ENABLE_MAPPER_021_022_023_025 && (mapper == 6'b011000))
          begin
-            case ({cpu_addr_in[14:12], flags[0] ? vrc_2b_low : vrc_2b_hi, flags[0] ? vrc_2b_hi : vrc_2b_low})
+            case ({cpu_addr_in[14:12], vrc_2b_hi, vrc_2b_low})
                5'b00000,
                5'b00001,
                5'b00010,
@@ -1164,7 +1178,7 @@ begin
             begin
                if (cpu_addr_in[14:12] == 3'b111)
                begin
-                  case ({flags[0] ? vrc_2b_low : vrc_2b_hi, flags[0] ? vrc_2b_hi : vrc_2b_low})
+                  case ({vrc_2b_hi, vrc_2b_low})
                      2'b00: vrc4_irq_latch[3:0] <= cpu_data_in[3:0];  // IRQ latch low
                      2'b01: vrc4_irq_latch[7:4] <= cpu_data_in[3:0];  // IRQ latch hi
                      2'b10: begin // IRQ control
