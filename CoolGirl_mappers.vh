@@ -144,21 +144,21 @@ reg writed;
 // for VRC
 wire shift_chr = ENABLE_MAPPER_021_022_023_025 && ENABLE_MAPPER_022 && (mapper == 6'b011000) && flags[1];
 wire vrc_2b_hi =
-	(!flags[0] && !flags[2]) ?
-		(cpu_addr_in[7] | cpu_addr_in[2]) // mapper #21
-	: (flags[0] && !flags[2]) ?
-		(cpu_addr_in[0]) // mapper #22
-	: (!flags[0] && flags[2]) ?
-		(cpu_addr_in[5] | cpu_addr_in[3] | cpu_addr_in[1]) // mapper #23
-	: (cpu_addr_in[2] | cpu_addr_in[0]); // mapper #25
+   (!flags[0] && !flags[2]) ?
+      (cpu_addr_in[7] | cpu_addr_in[2]) // mapper #21
+   : (flags[0] && !flags[2]) ?
+      (cpu_addr_in[0]) // mapper #22
+   : (!flags[0] && flags[2]) ?
+      (cpu_addr_in[5] | cpu_addr_in[3] | cpu_addr_in[1]) // mapper #23
+   : (cpu_addr_in[2] | cpu_addr_in[0]); // mapper #25
 wire vrc_2b_low =
-	(!flags[0] && !flags[2]) ?
-		(cpu_addr_in[6] | cpu_addr_in[1]) // mapper #21
-	: (flags[0] && !flags[2]) ?
-		(cpu_addr_in[1]) // mapper #22
-	: (!flags[0] && flags[2]) ?
-		(cpu_addr_in[4] | cpu_addr_in[2] | cpu_addr_in[0]) // mapper #23
-	: (cpu_addr_in[3] | cpu_addr_in[1]); // mapper #25
+   (!flags[0] && !flags[2]) ?
+      (cpu_addr_in[6] | cpu_addr_in[1]) // mapper #21
+   : (flags[0] && !flags[2]) ?
+      (cpu_addr_in[1]) // mapper #22
+   : (!flags[0] && flags[2]) ?
+      (cpu_addr_in[4] | cpu_addr_in[2] | cpu_addr_in[0]) // mapper #23
+   : (cpu_addr_in[3] | cpu_addr_in[1]); // mapper #25
 
 wire cpu_data_out_enabled;
 wire [7:0] cpu_data_out;
@@ -403,15 +403,15 @@ begin
       mapper90_irq_reload <= 0;
 
    // for mapper #67
-	if (ENABLE_MAPPER_067 && mapper67_irq_enabled)
+   if (ENABLE_MAPPER_067 && mapper67_irq_enabled)
    begin
-		mapper67_irq_counter = mapper67_irq_counter - 1'b1;
-		if (mapper67_irq_counter == 16'hFFFF)
-		begin
-			mapper67_irq_out <= 1; // fire IRQ
-			mapper67_irq_enabled <= 0; // disable IRQ
-		end
-	end
+      mapper67_irq_counter = mapper67_irq_counter - 1'b1;
+      if (mapper67_irq_counter == 16'hFFFF)
+      begin
+         mapper67_irq_out <= 1; // fire IRQ
+         mapper67_irq_enabled <= 0; // disable IRQ
+      end
+   end
 
    if (cpu_rw_in == 1) // read
    begin
@@ -932,40 +932,36 @@ begin
                      2'b00: begin // $8000-$9FFF
                         if (mmc1_load_register[4:3] == 2'b11)
                         begin
-                           prg_mode <= 3'b000;   // 0x4000 (A) + fixed last (C)
-                           prg_bank_c[4:1] <= 4'b1111;
+                           prg_mode = 3'b000;   // 0x4000 (A) + fixed last (C)
+                           prg_bank_c[4:1] = 4'b1111;
                         end else if (mmc1_load_register[4:3] == 2'b10)
                         begin
-                           prg_mode <= 3'b001;   // fixed first (C) + 0x4000 (A)
-                           prg_bank_c[4:1] <= 4'b0000;
+                           prg_mode = 3'b001;   // fixed first (C) + 0x4000 (A)
+                           prg_bank_c[4:1] = 4'b0000;
                         end else
-                           prg_mode <= 3'b111;   // 0x8000 (A)
+                           prg_mode = 3'b111;   // 0x8000 (A)
                         if (mmc1_load_register[5])
-                           chr_mode <= 3'b100;
+                           chr_mode = 3'b100;
                         else
-                           chr_mode <= 3'b000;
-                        mirroring[1:0] <= mmc1_load_register[2:1] ^ 2'b10;
+                           chr_mode = 3'b000;
+                        mirroring[1:0] = mmc1_load_register[2:1] ^ 2'b10;
                      end
                      2'b01: begin // $A000-$BFFF
-                        chr_bank_a[6:2] <= mmc1_load_register[5:1];
-                        prg_bank_a[5] <= mmc1_load_register[5]; // for SUROM, 512k PRG support
-                        prg_bank_c[5] <= mmc1_load_register[5]; // for SUROM, 512k PRG support
+                        chr_bank_a[6:2] = mmc1_load_register[5:1];
+                        if (flags[0]) // 16KB of PRG RAM
+                        begin
+                           sram_page = {1'b1, ~mmc1_load_register[4]}; // PRG RAM page #2 is "battery" backed
+                        end
+                        prg_bank_a[5] = mmc1_load_register[5]; // for SUROM, 512k PRG support
+                        prg_bank_c[5] = mmc1_load_register[5]; // for SUROM, 512k PRG support
                      end
-                     2'b10: chr_bank_e[6:2] <= mmc1_load_register[5:1]; // $C000-$DFFF
+                     2'b10: chr_bank_e[6:2] = mmc1_load_register[5:1]; // $C000-$DFFF
                      2'b11: begin
-                        prg_bank_a[4:1] <= mmc1_load_register[4:1]; // $E000-$FFFF
-                        sram_enabled <= ~mmc1_load_register[5];
+                        prg_bank_a[4:1] = mmc1_load_register[4:1]; // $E000-$FFFF
+                        sram_enabled = ~mmc1_load_register[5];
                      end
                   endcase
-                  mmc1_load_register[5:0] <= 6'b100000;
-                  if (flags[0]) // 16KB of PRG RAM
-                  begin
-                     if (chr_mode[2])
-                        sram_page <= {1'b1, ~chr_bank_a[6]}; // page #2 is battery backed
-                     else
-                        sram_page <= {1'b1, ~chr_bank_a[5]}; // wtf? ripped off from fce ultra source code and it works
-                  end
-                  // 32KB of WRAM is not supported yet (who cares)
+                  mmc1_load_register[5:0] = 6'b100000;
                end
             end
          end
@@ -1355,8 +1351,8 @@ begin
                                 mapper67_irq_counter[7:0] <= cpu_data_in[7:0];
                           end
                   3'b101: begin                                // $D800, IRQ enable
-									  mapper67_irq_latch <= 0;
-						           mapper67_irq_enabled <= cpu_data_in[4];
+                             mapper67_irq_latch <= 0;
+                             mapper67_irq_enabled <= cpu_data_in[4];
                           end
                   3'b110: mirroring[1:0] <= cpu_data_in[1:0];  // $E800
                   3'b111: prg_bank_a[4:1] <= cpu_data_in[3:0]; // $F800
