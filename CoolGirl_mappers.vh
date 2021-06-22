@@ -697,7 +697,7 @@ begin
                // Mapper #30 - UNROM 512
                if (ENABLE_MAPPER_030 && flags[1])
                begin
-                  // One screen mirroring select, CHR RAM bank, PRG ROM bank
+                  // One screen mirroring select, CHR RAM bank
                   mirroring[1:0] <= {1'b1, cpu_data_in[7]};
                   chr_bank_a[1:0] <= cpu_data_in[6:5];
                end
