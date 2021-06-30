@@ -26,6 +26,7 @@ parameter ENABLE_MAPPER_078 = 1,             // mapper #078 - Irem: Holy Diver a
 parameter ENABLE_MAPPER_079_113_146 = 0,     // mappers #079, #113, #146 - NINA-03/06 and Sachen 3015
 parameter ENABLE_MAPPER_083 = 0,             // mapper #083 - Cony/Yoko, submapper #0 only
 parameter ENABLE_MAPPER_087 = 1,             // mapper #087 - Jaleco
+parameter ENABLE_MAPPER_089 = 0,             // mapper #089 - Sunsoft-2 chip on the Sunsoft-3 board: Mito Koumon
 parameter ENABLE_MAPPER_090 = 1,             // mapper #090 - JY (partical support): Aladdin only
 parameter ENABLE_MAPPER_090_ACCURATE_IRQ = 0,// mapper #090 accurate IRQs: for Super Mario World
 parameter ENABLE_MAPPER_090_MULTIPLIER = 0,  // mapper #090 multiplier: for Super Mario World protection check

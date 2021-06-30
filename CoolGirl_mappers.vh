@@ -1362,6 +1362,14 @@ begin
                mapper67_irq_out <= 0;
             end
          end
+
+         // Mapper #89 - Sunsoft-2 chip on the Sunsoft-3 board
+         if (ENABLE_MAPPER_089 && (mapper == 6'b100101))
+         begin
+           prg_bank_a[3:1] <= cpu_data_in[6:4];
+           chr_bank_a[6:3] <= {cpu_data_in[7], cpu_data_in[2:0]};
+           mirroring[1:0] <= {1'b1, cpu_data_in[3]};
+         end
       end // romsel
    end // write
 
