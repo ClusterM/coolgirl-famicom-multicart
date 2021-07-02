@@ -634,16 +634,14 @@ begin
             end
          end
 
-         // Mappers NINA-03/06 and Sachen 3015: #113 (flag0 = 0), #79 and #146 (flag0 = 1)
-         if (ENABLE_MAPPER_079_113_146 && (mapper == 6'b011011))
+         // Mappers #79 and #146 - NINA-03/06 and Sachen 3015: (flag0 = 1)
+         if (ENABLE_MAPPER_079_146 && (mapper == 6'b011011))
          begin
             if ({cpu_addr_in[14:13], cpu_addr_in[8]} == 3'b101)
             begin
                // That is, $4100-$41FF, $4300-$43FF, $45xx, $47xx, ..., $5Dxx, and $5Fxx.
                chr_bank_a[5:3] <= cpu_data_in[2:0];
-               prg_bank_a[4:2] <= cpu_data_in[5:3];
-               if (!flags[0])
-                   mirroring <= {1'b0, ~cpu_data_in[7]};
+               prg_bank_a[2] <= cpu_data_in[3];
             end
          end
 
