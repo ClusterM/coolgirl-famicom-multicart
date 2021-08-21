@@ -521,10 +521,8 @@ begin
                      if (ENABLE_MAPPER_009_010 && mapper == 6'b010001) prg_bank_b <= 8'b11111101;
                      if (ENABLE_MAPPER_042 && (mapper == 6'b010111)) map_rom_on_6000 <= 1;
                      if (ENABLE_MAPPER_065 && mapper == 6'b001110) prg_bank_b <= 1;
-                     if (ENABLE_MAPPER_AC08 && (mapper == 6'b100001)) map_rom_on_6000 <= 1;
                   end
             endcase
-
          end
 
          if ((RESET_COMBINATION != 0) && (cpu_addr_in == 15'h4016))
@@ -672,15 +670,6 @@ begin
             begin
                prg_bank_a[3:2] <= cpu_data_in[1:0];
                chr_bank_a[4:3] <= cpu_data_in[3:2];
-            end
-         end
-
-         // Mapper AC-08
-         if (ENABLE_MAPPER_AC08 && (mapper == 6'b100001))
-         begin
-            if (cpu_addr_in[14:0] == 15'h4025)
-            begin
-               mirroring <= {1'b0, cpu_data_in[3]};
             end
          end
       end else begin // $8000-$FFFF
@@ -1264,12 +1253,6 @@ begin
          begin
             prg_bank_a[4:1] <= cpu_data_in[7:4];
             chr_bank_a[6:3] <= cpu_data_in[3:0];
-         end
-
-         // Mapper AC-08
-         if (ENABLE_MAPPER_AC08 && (mapper == 6'b100001))
-         begin
-            prg_bank_6000[3:0] <= cpu_data_in[4:1];
          end
 
          // Mapper #75 - VRC1
