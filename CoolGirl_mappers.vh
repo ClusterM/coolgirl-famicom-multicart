@@ -1408,10 +1408,10 @@ begin
    // for mapper #90
    if (ENABLE_MAPPER_090 & ENABLE_MAPPER_090_ACCURATE_IRQ)
    begin
-      if (mapper90_irq_out_clear) mapper90_irq_pending <= 0;
+      if (mapper90_irq_out_clear) mapper90_irq_pending = 0;
       if (mapper90_irq_reload && !mapper90_irq_reload_clear)
       begin
-         mapper90_irq_counter <= mapper90_irq_latch;
+         mapper90_irq_counter = mapper90_irq_latch;
          mapper90_irq_reload_clear <= 1;
       end else if (!mapper90_irq_reload)
       begin
