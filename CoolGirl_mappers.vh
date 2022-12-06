@@ -164,8 +164,9 @@ wire cpu_data_out_enabled;
 wire [7:0] cpu_data_out;
 assign {cpu_data_out_enabled, cpu_data_out} =
    (cpu_rw_in && m2) ? // reading?
-      ((RESET_COMBINATION != 0) && (reset_state != 0)) ? // resetting?
-      (
+   (
+      ((RESET_COMBINATION != 0) && (reset_state != 0)) // resetting?
+      ? ( // resetting
          // jmp [$FFFC]
          reset_state == 1 ?
             {1'b1, 8'h6C}
@@ -193,7 +194,7 @@ assign {cpu_data_out_enabled, cpu_data_out} =
             9'b00000000
          ): 9'b00000000
       )
-   : 9'b00000000;
+   ) : 9'b00000000;
 
 // Mirroring: 00=vertical, 01=horizontal, 10=1Sa, 11=1Sb
 assign ppu_ciram_a10 = (ENABLE_MAPPER_118 & (mapper == 6'b010100) & flags[0]) ? chr_addr_mapped[17] :
