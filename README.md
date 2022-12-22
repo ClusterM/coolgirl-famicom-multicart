@@ -215,7 +215,7 @@ All registers are $00 on power-on and reset.
 ```
 Power-on/reset state: A=0, B=~2, C=~1, D=~0
 
-## Chr banking modes
+## CHR banking modes
 ```
 | Code | $0000 | $0400 | $0800 | $0C00 | $1000 | $1400 | $1800 | $1C00 | Notes                                    |
 | ---- + ----- + ----- + ----- + ----- + ----- + ----- + ----- + ----- + ---------------------------------------- |
@@ -233,6 +233,6 @@ Power-on/reset state: A=0, B=~2, C=~1, D=~0
 | ---- + ------- ----- + ------------- + ------------- + ------------- + ---------------------------------------- |
 | 110  |       A       |       C       |       E       |       G       | Used by many complicated mappers         |
 | ---- + ----- + ----- + ----- + ----- + ----- + ----- + ----- + ----- + ---------------------------------------- |
-| 111  |   A   |   B   |   C   |   D   |   E   |  F    |   G   |   H   |                                          |
+| 111  |   A   |   B   |   C   |   D   |   E   |  F    |   G   |   H   | Used by very complicated mappers         |
 ```
 Power-on/reset state: A=0, B=1, C=2, D=3, E=4, F=5, G=6, H=7
