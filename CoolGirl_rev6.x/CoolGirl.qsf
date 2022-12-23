@@ -39,6 +39,7 @@
 
 set_global_assignment -name FAMILY "MAX II"
 set_global_assignment -name DEVICE EPM1270T144C5
+set_global_assignment -name FAMILY "MAX II"
 set_global_assignment -name TOP_LEVEL_ENTITY CoolGirl
 set_global_assignment -name ORIGINAL_QUARTUS_VERSION 15.1.0
 set_global_assignment -name PROJECT_CREATION_TIME_DATE "19:53:22  MAY 05, 2016"

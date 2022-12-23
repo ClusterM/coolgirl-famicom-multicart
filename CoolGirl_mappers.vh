@@ -971,12 +971,16 @@ begin
             endcase
          end
 
+         // Mapper #70
          // Mapper #152 - Bandai
-         if (ENABLE_MAPPER_152 && (mapper == 6'b010010))
+         if (ENABLE_MAPPER_070_152 && (mapper == 6'b010010))
          begin
             chr_bank_a[6:3] <= cpu_data_in[3:0];
             prg_bank_a[3:1] <= cpu_data_in[6:4];
-            mirroring <= {1'b1, cpu_data_in[7]};
+            if (flags[0])
+               mirroring <= {1'b1, cpu_data_in[7]}; // Mapper #152
+            else
+               prg_bank_a[4] <= cpu_data_in[7]; // Mapper #70
          end
 
          // Mapper #73 - VRC3
@@ -1247,13 +1251,6 @@ begin
                prg_bank_a[5:2] <= cpu_data_in[7:4];
                chr_bank_a[6:3] <= cpu_data_in[3:0];
             end
-         end
-
-         // Mapper #70 - Bandai
-         if (ENABLE_MAPPER_070 && (mapper == 6'b011110))
-         begin
-            prg_bank_a[4:1] <= cpu_data_in[7:4];
-            chr_bank_a[6:3] <= cpu_data_in[3:0];
          end
 
          // Mapper #75 - VRC1
