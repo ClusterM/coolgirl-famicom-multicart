@@ -142,7 +142,8 @@ reg [7:0] mapper163_r5 = 0;
 // to block two writes in a row
 reg writed;
 // for VRC
-wire shift_chr = ENABLE_MAPPER_021_022_023_025 && ENABLE_MAPPER_022 && (mapper == 6'b011000) && flags[1];
+wire shift_chr_right = ENABLE_MAPPER_021_022_023_025 && ENABLE_MAPPER_022 && (mapper == 6'b011000) && flags[1];
+wire shift_chr_left = 0;
 wire vrc_2b_hi =
    (!flags[0] && !flags[2]) ?
       (cpu_addr_in[7] | cpu_addr_in[2]) // mapper #21
@@ -274,7 +275,7 @@ wire [18:10] chr_addr_mapped = (
          )
       )
    )
-) >> shift_chr;
+) >> shift_chr_right << shift_chr_left;
 
 always @ (negedge m2)
 begin
@@ -972,7 +973,7 @@ begin
          end
 
          // Mapper #70
-         // Mapper #152 - Bandai
+         // Mapper #152
          if (ENABLE_MAPPER_070_152 && (mapper == 6'b010010))
          begin
             chr_bank_a[6:3] <= cpu_data_in[3:0];
@@ -1274,8 +1275,13 @@ begin
          if (ENABLE_MAPPER_083 && (mapper == 6'b100011))
          begin
             case (cpu_addr_in[9:8])
+                2'b00: begin // $80xx
+					            prg_bank_a[4:1] = cpu_data_in[3:0];
+					        end
                 2'b01: begin // $81xx
                            mirroring <= cpu_data_in[1:0];
+									prg_mode[2] <= cpu_data_in[4];
+									map_rom_on_6000 <= cpu_data_in[5];
                            mapper83_irq_enabled_latch <= cpu_data_in[7];
                        end
                 2'b10: begin // 82xx
@@ -1295,19 +1301,30 @@ begin
                                    2'b00: prg_bank_a[7:0] <= cpu_data_in[7:0];
                                    2'b01: prg_bank_b[7:0] <= cpu_data_in[7:0];
                                    2'b10: prg_bank_c[7:0] <= cpu_data_in[7:0];
-                                   //2'b11: prg_bank_6000[7:0] <= cpu_data_in[7:0];
+                                   2'b11: prg_bank_6000[7:0] <= cpu_data_in[7:0];
                                endcase
                            end else begin
-                               case (cpu_addr_in[2:0])
-                                   3'b000: chr_bank_a[7:0] <= cpu_data_in[7:0];
-                                   3'b001: chr_bank_b[7:0] <= cpu_data_in[7:0];
-                                   3'b010: chr_bank_c[7:0] <= cpu_data_in[7:0];
-                                   3'b011: chr_bank_d[7:0] <= cpu_data_in[7:0];
-                                   3'b100: chr_bank_e[7:0] <= cpu_data_in[7:0];
-                                   3'b101: chr_bank_f[7:0] <= cpu_data_in[7:0];
-                                   3'b110: chr_bank_g[7:0] <= cpu_data_in[7:0];
-                                   3'b111: chr_bank_h[7:0] <= cpu_data_in[7:0];
-                               endcase                             
+									    if (!flags[2])
+										 begin
+                                   case (cpu_addr_in[2:0]) // Submapper 0
+                                       3'b000: chr_bank_a[7:0] <= cpu_data_in[7:0];
+                                       3'b001: chr_bank_b[7:0] <= cpu_data_in[7:0];
+                                       3'b010: chr_bank_c[7:0] <= cpu_data_in[7:0];
+                                       3'b011: chr_bank_d[7:0] <= cpu_data_in[7:0];
+                                       3'b100: chr_bank_e[7:0] <= cpu_data_in[7:0];
+                                       3'b101: chr_bank_f[7:0] <= cpu_data_in[7:0];
+                                       3'b110: chr_bank_g[7:0] <= cpu_data_in[7:0];
+                                       3'b111: chr_bank_h[7:0] <= cpu_data_in[7:0];
+                                   endcase
+										 end else begin
+										     case (cpu_addr_in[2:0]) // Submapper 1
+                                       3'b000: chr_bank_a[8:1] <= cpu_data_in[7:0];
+                                       3'b001: chr_bank_c[8:1] <= cpu_data_in[7:0];
+													3'b010,3'b011,3'b100,3'b101,
+                                       3'b110: chr_bank_e[8:1] <= cpu_data_in[7:0];
+                                       3'b111: chr_bank_g[8:1] <= cpu_data_in[7:0];
+                                   endcase
+										 end
                            end
                        end
             endcase            
