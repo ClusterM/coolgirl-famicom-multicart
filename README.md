@@ -2,6 +2,15 @@
 
 The goal of the project is to create a open source Famicom cartridge that will not be too expensive and can contain up to ~700 games of various mappers.
 
+It's inspired by ultra cheap "COOLBOY" multicarts but instead of using single mapper (MMC3) "COOLGIRL" uses EPM1270 CPLD chip to simulate many different mappers. Both PRG and CHR data stored on a single flash memory chip. Before game starts loader loads CHR data from flash to CHR RAM and sets PRG offset, banking modes, mapper code and other settings via registers. There is lockout register bit which prevents further writes.
+
+Full characteristics:
+* PRG ROM: up to 128 MiB
+* CHR RAM: up to 512 KiB
+* PRG RAM: 32 KiB, non-volatile (FRAM) (optional)
+
+You can use [COOLGIRL Multirom Builder](https://github.com/ClusterM/coolgirl-multirom-builder) to combine multiple ROMs into one with menu and loader.
+
 ## Registers
 Range: $5000-$5FFF
 
