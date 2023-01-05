@@ -46,4 +46,4 @@ parameter UxROM_BITSIZE = 4,                 // Maximum size for UxROM PRG (3=25
 parameter AxROM_BxROM_BITSIZE = 3,           // Maximum size for AxROM/BxROM PRG (2=256KB - standard size, 3=512KB - required for some hacks/homebrew)
 parameter MMC3_BITSIZE = 8,                  // Maximum size for MMC3 PRG (6=512KB - standard size, 8=2MB - required for some hacks/homebrew)
 
-parameter RESET_COMBINATION = 8'b11010010
+parameter RESET_COMBINATION = 8'b11010010    // Button configuration for software reset
