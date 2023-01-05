@@ -35,7 +35,7 @@ Generated gerberes are located in the [CoolGirl_rev6.x/hardware](CoolGirl_rev6.x
 ### Firmware
 EPM1270T144 CPLD firmware can be compiled using the [Quartus 22.1](https://www.intel.com/content/www/us/en/collections/products/fpga/software/downloads.html?s=Newest&f:guidetm83741EA404664A899395C861EDA3D38B=%5BIntel%C2%AE%20MAX%C2%AE%20CPLDs%20and%20FPGAs%3BMAX%C2%AE%20II%20CPLDs%5D). Open [CoolGirl.qpf](CoolGirl_rev6.x/CoolGirl.qpf) to configure and compile project.
 
-All mappers can't fit into CPLD at once, so you need to select required mappers in (config file)[CoolGirl_config.vh], so they can fit into 1270 macrocells. Also, you can set RESET_COMBINATION parameter to specify software reset button combination, it works on original consoles and some famiclones. Default combination is 8'b11010010 (Left+Start+A+B). Set it to 0 to disable and free some macrocells.
+All mappers can't fit into the CPLD at once, so you need to select required mappers in (config file)[CoolGirl_config.vh], so they can fit into 1270 macrocells. Also, you can set RESET_COMBINATION parameter to specify software reset button combination, it works on original consoles and some famiclones. Default combination is 8'b11010010 (Left+Start+A+B). Set it to 0 to disable and free some macrocells.
 
 There are JTAG pads on the cartridge board to connect programmer (USB Blaster).
 
