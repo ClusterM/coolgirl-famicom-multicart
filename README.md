@@ -11,13 +11,22 @@ Full characteristics:
 
 ## How to build
 ### Hardware
-Bill of materials:
-TODO
+#### Bill of materials:
+![BoM](CoolGirl_rev6.x/hardware/bom.png)
 
-Schematic:
-![Schematic](CoolGirl_rev6.x/schematics/coolgirl.png)
+#### Schematic
+![Schematic](CoolGirl_rev6.x/hardware/coolgirl.png)
 
-### Software
+#### Board
+Board design for order on [jlcpcb.com](https://jlcpcb.com).
+
+
+
+* Layers: 4
+* PCB Thickness: 1.2mm
+* Golden fingers highly recommended
+
+### Firmware
 TODO
 
 ### ROM preparing
