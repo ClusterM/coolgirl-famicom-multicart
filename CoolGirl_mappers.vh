@@ -778,7 +778,7 @@ begin
          if (mapper == 6'b001000)
          begin
             prg_bank_a[AxROM_BxROM_BITSIZE+2:2] <= cpu_data_in[AxROM_BxROM_BITSIZE:0];
-            if (!ENABLE_MAPPER_034_241_BxROM || !flags[0]) // BxROM?
+            if (!ENABLE_MAPPER_034_BxROM || !flags[0]) // BxROM?
                mirroring <= {1'b1, cpu_data_in[4]};
          end
 
