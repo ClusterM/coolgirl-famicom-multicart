@@ -9,6 +9,18 @@ Full characteristics:
 * CHR RAM: up to 512 KiB
 * PRG RAM: 32 KiB, non-volatile (FRAM) (optional)
 
+## How to build
+### Hardware
+Bill of materials:
+TODO
+
+Schematic:
+![Schematic](CoolGirl_rev6.x/schematics/coolgirl.png)
+
+### Software
+TODO
+
+### ROM preparing
 You can use [COOLGIRL Multirom Builder](https://github.com/ClusterM/coolgirl-multirom-builder) to combine multiple ROMs into one with menu and loader.
 
 ## Registers
