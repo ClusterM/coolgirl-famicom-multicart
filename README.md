@@ -2,7 +2,7 @@
 
 The goal of the project is to create a open source Famicom cartridge that will not be too expensive and can contain up to ~700 games of various mappers.
 
-It's inspired by ultra cheap "COOLBOY" multicarts but instead of using single mapper (MMC3) "COOLGIRL" uses EPM1270 CPLD chip to simulate many different mappers. Both PRG and CHR data stored on a single flash memory chip. Before game starts loader loads CHR data from flash to CHR RAM and sets PRG offset, banking modes, mapper code and other settings via registers. There is lockout register bit which prevents further writes.
+It's inspired by ultra cheap "COOLBOY" multicarts but instead of using single mapper (MMC3) "COOLGIRL" uses EPM1270T144 CPLD chip to simulate many different mappers. Both PRG and CHR data stored on a single flash memory chip. Before game starts loader loads CHR data from flash to CHR RAM and sets PRG offset, banking modes, mapper code and other settings via registers. There is lockout register bit which prevents further writes.
 
 Full characteristics:
 * PRG ROM: up to 128 MiB
@@ -11,26 +11,36 @@ Full characteristics:
 
 ## How to build
 ### Hardware
-#### Bill of materials:
+#### Bill of materials
 ![BoM](CoolGirl_rev6.x/hardware/bom.png)
 
 #### Schematic
-![Schematic](CoolGirl_rev6.x/hardware/coolgirl.png)
+![Schematic](CoolGirl_rev6.x/hardware/schematic.png)
+
+The [source file](CoolGirl_rev6.x/hardware/schematic.dch) can be opened using the [DipTrace](https://diptrace.com/).
 
 #### Board
-Board design for order on [jlcpcb.com](https://jlcpcb.com).
+Board designed for order on [jlcpcb.com](https://jlcpcb.com).
 
-
+![image](https://user-images.githubusercontent.com/4236181/210751597-ae77ee0d-9d19-49fe-be6a-2fbb7411e66e.png)
 
 * Layers: 4
 * PCB Thickness: 1.2mm
 * Golden fingers highly recommended
 
+The [source file](CoolGirl_rev6.x/hardware/board.dip) can be opened using the [DipTrace](https://diptrace.com/).
+
+Generated gerberes are located in the [CoolGirl_rev6.x/hardware](CoolGirl_rev6.x/hardware) directory.
+
 ### Firmware
-TODO
+EPM1270T144 CPLD firmware can be compiled using the [Quartus 22.1](https://www.intel.com/content/www/us/en/collections/products/fpga/software/downloads.html?s=Newest&f:guidetm83741EA404664A899395C861EDA3D38B=%5BIntel%C2%AE%20MAX%C2%AE%20CPLDs%20and%20FPGAs%3BMAX%C2%AE%20II%20CPLDs%5D). Open [CoolGirl.qpf](CoolGirl_rev6.x/CoolGirl.qpf) to configure and compile project.
+
+All mappers can't fit into CPLD at once, so you need to select required mappers in (config file)[CoolGirl_config.vh], so they can fit into 1270 macrocells. Also, you can set RESET_COMBINATION parameter to specify software reset button combination, it works on original consoles and some famiclones. Default combination is 8'b11010010 (Left+Start+A+B). Set it to 0 to disable and free some macrocells.
+
+There are JTAG pads on the cartridge board to connect programmer (USB Blaster).
 
 ### ROM preparing
-You can use [COOLGIRL Multirom Builder](https://github.com/ClusterM/coolgirl-multirom-builder) to combine multiple ROMs into one with menu and loader.
+You can use [COOLGIRL Multirom Builder](https://github.com/ClusterM/coolgirl-multirom-builder) to combine multiple ROMs into one with menu and loader. ROM can be written to assembled cartridge using [Famicom/NES Dumper/Writer](https://github.com/ClusterM/famicom-dumper-writer). Non-soldered flash memory chip can be written using programmer.
 
 ## Registers
 Range: $5000-$5FFF
