@@ -238,10 +238,9 @@ All registers are $00 on power-on and reset.
 | ------ + ---------------------------------- + ------------------------------------- + ----------------------------------------- |
 | ...... | Reserved                           |                                       |                                           |
 
-```
-
 † - very popular mappers, can't be disabled in config
 * - enabled by default in config
+```
 
 ## PRG banking modes
 ```
