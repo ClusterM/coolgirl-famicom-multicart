@@ -285,3 +285,8 @@ Power-on/reset state: A=0, B=~2, C=~1, D=~0
 | 111  |   A   |   B   |   C   |   D   |   E   |  F    |   G   |   H   | Used by very complicated mappers         |
 ```
 Power-on/reset state: A=0, B=1, C=2, D=3, E=4, F=5, G=6, H=7
+
+## Donate
+* PayPal: cluster@cluster.wtf
+* [Donation Alerts](https://www.donationalerts.com/r/clustermeerkat)
+* [Boosty](https://boosty.to/cluster)
