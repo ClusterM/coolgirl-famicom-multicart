@@ -201,10 +201,12 @@ All registers are $00 on power-on and reset.
 | ------ + ---------------------------------- + ------------------------------------- + ----------------------------------------- |
 | 010111 | 42 (FDS conversions) *             |                                       | Interrupts disabled by default            |
 | ------ + ---------------------------------- + ------------------------------------- + ----------------------------------------- |
-| 011000 | 21 (VRC2/VRC4) *                   | 0 - switch A0 and A1 lines:           |                                           |
-|        | 22 (VRC2/VRC4) *                   |     0=A0,A1 like VRC2b (mapper 23),   |                                           |
-|        | 23 (VRC2/VRC4) *                   |     1=A1,A0 like VRC2a(22), VRC2c(25) |                                           |
-|        | 25 (VRC2/VRC4) *                   | 1 - divide CHR bank select by two     |                                           |
+| 011000 | 21 (VRC2/VRC4) *                   | 2,0 - A0 and A1 lines configuration:  |                                           |
+|        | 22 (VRC2/VRC4) *                   |     0,0 - like mapper 21,             |                                           |
+|        | 23 (VRC2/VRC4) *                   |     0,1 - like mapper 22              |                                           |
+|        | 25 (VRC2/VRC4) *                   |     1,0 - like 23                     |                                           |
+|        |                                    |     1,1 - like 25                     |                                           |
+|        |                                    | 1 - divide CHR bank select by two     |                                           |
 |        |                                    |     (VRC2a, mapper 22)                |                                           |
 | ------ + ---------------------------------- + ------------------------------------- + ----------------------------------------- |
 | 011001 | 69 (Sunsoft FME-7) *               |                                       |                                           |
