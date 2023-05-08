@@ -202,10 +202,10 @@ All registers are $00 on power-on and reset.
 | 010111 | 42 (FDS conversions) *             |                                       | Interrupts disabled by default            |
 | ------ + ---------------------------------- + ------------------------------------- + ----------------------------------------- |
 | 011000 | 21 (VRC2/VRC4) *                   | 2,0 - A0 and A1 lines configuration:  |                                           |
-|        | 22 (VRC2/VRC4) *                   |     0,0 - like mapper 21,             |                                           |
+|        | 22 (VRC2/VRC4) *                   |     0,0 - like mapper 21              |                                           |
 |        | 23 (VRC2/VRC4) *                   |     0,1 - like mapper 22              |                                           |
-|        | 25 (VRC2/VRC4) *                   |     1,0 - like 23                     |                                           |
-|        |                                    |     1,1 - like 25                     |                                           |
+|        | 25 (VRC2/VRC4) *                   |     1,0 - like mapper 23              |                                           |
+|        |                                    |     1,1 - like mapper 25              |                                           |
 |        |                                    | 1 - divide CHR bank select by two     |                                           |
 |        |                                    |     (VRC2a, mapper 22)                |                                           |
 | ------ + ---------------------------------- + ------------------------------------- + ----------------------------------------- |
